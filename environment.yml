@@ -75,4 +75,3 @@ dependencies:
     - werkzeug==1.0.1
     - wrapt==1.12.1
 prefix: /Users/nurithofesh/PycharmProjects/OSIC/conda_env
-
