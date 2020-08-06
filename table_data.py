@@ -117,6 +117,7 @@ def get_dataset_from_dict(dict):
     return np.stack(id_list), np.stack(poly_list)
 
 
+plot_patient_fvc(get_train_table(), get_train_table().loc[0, "Patient"])
 d = get_poly_fvc_dict()
 x, y = get_dataset_from_dict(d)
 print(np.argmax(np.abs(y[:, 1])))
