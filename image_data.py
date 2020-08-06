@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tests
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Just disables the warning, doesn't enable AVX/FMA
@@ -79,3 +80,5 @@ def read_image(im_path):
     return tf.io.decode_jpeg(tf.io.read_file(im_path))
 
 
+if __name__ == "__main__":
+    tests.time_dataset_fetching()
