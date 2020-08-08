@@ -19,9 +19,15 @@ def get_patient_directories_dataset(path):
     return dataset
 
 
-def get_images_dataset(path):
-    """Create images dataset from gcs path.
-    The dataset contains tuples of the format (id, dataset of images of that id)
+def get_images_paths_dataset(path):
+    """Return a tf dataset with all of the images from path"""
+    dataset = tf.data.Dataset.list_files(path + '/*/*')
+    return dataset
+
+
+def get_images_dataset_by_id(path):
+    """Create images dataset partitioned by id from gcs path.
+    The dataset contains tuples of the format (tensor(id), dataset of images of that id)
     """
 
     directories_dataset = get_patient_directories_dataset(path)
@@ -49,6 +55,33 @@ def get_images_dataset(path):
         return id, images
 
     images_dataset = directories_dataset.map(read_images, num_parallel_calls=AUTO)
+    return images_dataset
+
+
+def get_images_dataset(path):
+    """Create images dataset from gcs path
+    The dataset contains tuples of format (tensor(id), one image of that id)
+    """
+
+    image_path_dataset = get_images_paths_dataset(path)
+
+    # helper funciton
+    def read_image_and_id(image_path):
+        """Return a tuple of patient id and one of his images.
+        patient id is a string tensor.
+        patient image is a an image.
+        """
+
+        # get patient id
+        id = tf.strings.split(image_path, sep='/')[-2]
+
+        # read image
+        image = read_image(image_path)
+        image = resize_and_crop_image(image)
+
+        return id, image
+
+    images_dataset = image_path_dataset.map(read_image_and_id, num_parallel_calls=AUTO)
     return images_dataset
 
 
@@ -80,5 +113,6 @@ def read_image(im_path):
     return tf.io.decode_jpeg(tf.io.read_file(im_path))
 
 
+# TODO: delete this
 if __name__ == "__main__":
-    tests.time_dataset_fetching()
+    tests.test_images_dataset()

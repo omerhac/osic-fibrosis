@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="paperspace@184.105.118.44:22" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="paperspace@184.105.118.44:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/conda_env" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="paperspace@184.105.118.44:22 (2)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="paperspace@184.105.118.44:22 (7)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/paperspace/PycharmProjects/osic-fibrosis" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="paperspace@184.105.118.44:22 (8)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/paperspace/PycharmProjects/osic-fibrosis" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

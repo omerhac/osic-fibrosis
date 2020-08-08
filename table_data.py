@@ -93,7 +93,7 @@ def plot_patient_percent(table, id, order=2):
 def get_poly_fvc_dict():
     """Return a dict with a mapping from id to their polynomial fvc estimation coeffs"""
     table = get_train_table()
-    polys_dict= {}
+    polys_dict = {}
 
     # get unique ids
     ids = table["Patient"].unique()
@@ -117,10 +117,7 @@ def get_dataset_from_dict(dict):
     return np.stack(id_list), np.stack(poly_list)
 
 
-plot_patient_fvc(get_train_table(), get_train_table().loc[0, "Patient"])
-d = get_poly_fvc_dict()
-x, y = get_dataset_from_dict(d)
-print(np.argmax(np.abs(y[:, 1])))
-print(y[45])
-print(x[45])
-plot_patient_fvc(get_train_table(), 'ID00110637202210673668310')
+# TODO: delete this
+if __name__ == "__main__""":
+    ds = get_train_table()
+    print(get_patient_fvc_poly(ds, "ID00007637202177411956430"))
