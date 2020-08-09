@@ -20,8 +20,10 @@ TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512'
 IMAGE_SIZE = [512, 512]
 
 # shards size
-SHARDS = 1000
+SHARDS = 16
 SHARD_SIZE = math.ceil(1.0 * 33000 / SHARDS)
+
+
 
 # Three types of data can be stored in TFRecords: bytestrings, integers and floats
 # They are always stored as lists, a single data element will be a list of size 1
@@ -65,7 +67,7 @@ def write_train_tfrecords():
     images_dataset = images_dataset.batch(SHARD_SIZE)
 
     print("Writing TFRecords")
-    for shard, (ids, images) in enumerate(images_dataset.take(2)):
+    for shard, (ids, images) in enumerate(images_dataset):
         # batch size used as shard size here
         shard_size = images.numpy().shape[0]
         # good practice to have the number of records in the filename
@@ -126,4 +128,4 @@ def get_train_dataset():
 
 
 if __name__ == '__main__':
-    tests.test_tfrecords_dataset()
+    write_train_tfrecords()
