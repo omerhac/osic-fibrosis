@@ -72,14 +72,16 @@ def create_test_dataset():
 
         # write data to numpy memory mapping
         decoded_id = patient_id.numpy().decode('utf-8')  # decode id
-        test_images[i, 0] = decoded_id  # save id
-        dataset[i, 1] = image.numpy()  # get image from tensor
+        test_images[i, :, :, 3] = image.numpy()  # save id
+        test_ids[i] = decoded_id  # get image from tensor
 
         # delete data to clear memory
-        del dataset
+        del test_images
+        del test_ids
 
 
 if __name__ == "__main__":
-    a = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train')
-    for id, image in a.take(50):
-        print(np.array(id.numpy().decode('utf-8')).dtype)
+    d = table_data.get_poly_fvc_dict()
+    ds = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train')
+    for id, image in ds.take(10):
+        print(id)

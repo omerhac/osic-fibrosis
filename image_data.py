@@ -58,9 +58,13 @@ def get_images_dataset_by_id(path):
     return images_dataset
 
 
-def get_images_dataset(path):
+def get_images_dataset(path, decode_images=True):
     """Create images dataset from gcs path
     The dataset contains tuples of format (tensor(id), one image of that id)
+
+    Args:
+        path--path to images directory
+        decode_images--whether to decode the images, defaults to True
     """
 
     image_path_dataset = get_images_paths_dataset(path)
@@ -76,7 +80,7 @@ def get_images_dataset(path):
         id = tf.strings.split(image_path, sep='/')[-2]
 
         # read image
-        image = read_image(image_path)
+        image = read_image(image_path, decode=decode_images)
         image = resize_and_crop_image(image)
         image = tf.cast(image, tf.uint8)  # memory usage gonna be quite intense..
 
@@ -109,9 +113,18 @@ def resize_and_crop_image(image):
     return image
 
 
-def read_image(im_path):
-    """Read a jpeg image from image path"""
-    return tf.io.decode_jpeg(tf.io.read_file(im_path))
+def read_image(im_path, decode=True):
+    """Read a jpeg image from image path
+
+    Args:
+        im_path--path to image
+        decode--whether to decode the image
+    """
+
+    if decode:
+        return tf.io.decode_jpeg(tf.io.read_file(im_path))
+    else:
+        return tf.io.read_file(im_path)
 
 
 # TODO: delete this
