@@ -81,8 +81,10 @@ def get_images_dataset(path, decode_images=True):
 
         # read image
         image = read_image(image_path, decode=decode_images)
-        image = resize_and_crop_image(image)
-        image = tf.cast(image, tf.uint8)  # memory usage gonna be quite intense..
+
+        if decode_images:
+            image = resize_and_crop_image(image)
+            image = tf.cast(image, tf.uint8)  # memory usage gonna be quite intense..
 
         return id, image
 
