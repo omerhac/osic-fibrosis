@@ -1,6 +1,7 @@
 name: /home/paperspace/PycharmProjects/osic-fibrosis/conda_env
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - matplotlib
   - numpy

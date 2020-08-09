@@ -1,6 +1,7 @@
 name: /Users/nurithofesh/PycharmProjects/OSIC/conda_env
 channels:
   - defaults
+  - conda forge
 dependencies:
   - numpy
   - python

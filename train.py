@@ -17,6 +17,7 @@ def train_model():
     # batch and repeat dataset
     train_dataset = train_dataset.repeat()
     train_dataset = train_dataset.batch(BATCH_SIZE)
+    val_dataset = val_dataset.batch(BATCH_SIZE)
 
     # get model
     network = model.get_model(IMAGE_SIZE)
