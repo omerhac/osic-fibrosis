@@ -100,7 +100,6 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
     else:
         filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
 
-    print(len(filenames))
     train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
     train_dataset = train_dataset.with_options(option_no_order)
 

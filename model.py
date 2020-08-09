@@ -69,8 +69,7 @@ def get_model(image_size=IMAGE_SIZE):
 
 if __name__ == '__main__':
     print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-    model = get_model(image_size=(224, 224))
-    train_set = etl.get_tfrecord_dataset(image_size=(224, 224), validation=True)
+
 
 
 
