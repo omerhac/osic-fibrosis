@@ -2,6 +2,7 @@ import image_data
 import table_data
 import tensorflow as tf
 import numpy as np
+import tf_record_writer
 import tests
 AUTO = tf.data.experimental.AUTOTUNE
 
@@ -11,6 +12,8 @@ IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
 # images size
 IMAGE_SIZE = [512, 512]
 
+# GCS tfrecords path
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512'
 
 def create_train_dataset():
     """Create a numpy memory mapping of tuples of format (image, poly_coeffs).
@@ -80,8 +83,22 @@ def create_test_dataset():
         del test_ids
 
 
+def get_tfrecord_train_dataset():
+    """Read from TFRecords. For optimal performance, read from multiple
+    TFRecord files at once and set the option experimental_deterministic = False
+    to allow order-altering optimizations."""
+
+    option_no_order = tf.data.Options()
+    option_no_order.experimental_deterministic = False
+
+    filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
+    train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
+    train_dataset = train_dataset.with_options(option_no_order)
+    train_dataset = train_dataset.map(tf_record_writer.read_tfrecord, num_parallel_calls=AUTO)
+
+    return train_dataset
+
+
 if __name__ == "__main__":
-    d = table_data.get_poly_fvc_dict()
-    ds = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train')
-    for id, image in ds.take(10):
-        print(id)
+    train_data = get_tfrecord_train_dataset()
+

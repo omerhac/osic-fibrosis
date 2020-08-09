@@ -108,23 +108,7 @@ def read_tfrecord(example):
     # get polynomial coeffs
     poly_coeffs = example['coeffs']
 
-    return id, image, poly_coeffs
-
-
-def get_train_dataset():
-    """Read from TFRecords. For optimal performance, read from multiple
-    TFRecord files at once and set the option experimental_deterministic = False
-    to allow order-altering optimizations."""
-
-    option_no_order = tf.data.Options()
-    option_no_order.experimental_deterministic = False
-
-    filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
-    train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
-    train_dataset = train_dataset.with_options(option_no_order)
-    train_dataset = train_dataset.map(read_tfrecord, num_parallel_calls=AUTO)
-
-    return train_dataset
+    return image, poly_coeffs # TODO: ADD ID TO RETURN
 
 
 if __name__ == '__main__':

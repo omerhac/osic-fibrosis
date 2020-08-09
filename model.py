@@ -1,5 +1,6 @@
 import tensorflow as tf
 import os
+import etl
 from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, MaxPooling2D, SeparableConv2D\
     , concatenate, GlobalAveragePooling2D
 
@@ -68,12 +69,15 @@ def get_model():
     g = GlobalAveragePooling2D()(i2)
     d = Dense(3, activation='linear')(g)
     model = tf.keras.Model(inputs=x, outputs=d)
-    model.compile(optimizer='adam', loss='mse', metrics=['rmse'])
+    model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
     return model
 
 
 if __name__ == '__main__':
-    
+    ds = etl.get_tfrecord_train_dataset()
+    ds = ds.batch(16)
+    model = get_model()
+    model.fit(ds, epochs=1)
 
 
