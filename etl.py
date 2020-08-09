@@ -83,7 +83,7 @@ def create_test_dataset():
         del test_ids
 
 
-def get_tfrecord_train_dataset(image_size=IMAGE_SIZE):
+def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
     """Read from TFRecords. For optimal performance, read from multiple
     TFRecord files at once and set the option experimental_deterministic = False
     to allow order-altering optimizations.
@@ -94,7 +94,13 @@ def get_tfrecord_train_dataset(image_size=IMAGE_SIZE):
     option_no_order = tf.data.Options()
     option_no_order.experimental_deterministic = False
 
-    filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
+    # check whether for validation
+    if validation:
+        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/val/*.tfrec")
+    else:
+        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
+
+    print(len(filenames))
     train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
     train_dataset = train_dataset.with_options(option_no_order)
 
