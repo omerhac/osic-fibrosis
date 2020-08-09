@@ -2,6 +2,7 @@ import time
 import image_data
 import tensorflow as tf
 import numpy as np
+import tf_record_writer
 
 # GCS PATH to images
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
@@ -45,3 +46,14 @@ def test_dataset_creation():
         assert train_y[i].shape == (3, ), train_y[i].shape
 
     print("**TEST PASSED!**")
+
+
+def test_tfrecords_dataset():
+    """Test tfrcords format on the cloud"""
+    tfrecords = tf_record_writer.get_train_dataset()
+    for id, image, poly in tfrecords.take(5):
+        assert isinstance(id.numpy().decode('utf-8'), str)
+        assert poly.numpy().shape == (3, ), poly.shape
+        assert image.numpy().shape == (*IMAGE_SIZE, 3), image.numpy().shape
+
+    print("*TEST PASSED!**")

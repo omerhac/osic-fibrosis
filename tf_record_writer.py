@@ -122,14 +122,8 @@ def get_train_dataset():
     train_dataset = train_dataset.with_options(option_no_order)
     train_dataset = train_dataset.map(read_tfrecord, num_parallel_calls=AUTO)
 
-    return  train_dataset
+    return train_dataset
+
 
 if __name__ == '__main__':
-    d = get_train_dataset()
-
-    for id, image, poly in d.take(1):
-        print(id.numpy().decode('utf-8'))
-        print(poly.numpy())
-        plt.figure()
-        plt.imshow(image.numpy())
-        plt.show()
+    tests.test_tfrecords_dataset()
