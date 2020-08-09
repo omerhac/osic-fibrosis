@@ -2,10 +2,14 @@ import image_data
 import table_data
 import tensorflow as tf
 import numpy as np
+import tests
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+
+# images size
+IMAGE_SIZE = [512, 512]
 
 
 def create_train_dataset():
@@ -24,26 +28,58 @@ def create_train_dataset():
     # get polynomial dict for each patient
     poly_dict = table_data.get_poly_fvc_dict()
 
+    # create memory mappings
+    train_x = np.memmap('data/train_x.dat', shape=(32994, *IMAGE_SIZE, 3), dtype='uint8', mode='w+')
+    train_y = np.memmap('data/train_y.dat', shape=(32994, 3), dtype='float32', mode='w+')
+
+    # iterate threw all images
+    for i, (patient_id, image) in enumerate(images_dataset):
+        # open memory mappings
+        train_x = np.memmap('data/train_x.dat', shape=(32994, *IMAGE_SIZE, 3), dtype='uint8', mode='r+')
+        train_y = np.memmap('data/train_y.dat', shape=(32994, 3), dtype='float32', mode='r+')
+
+        # write data to numpy memory mapping
+        decoded_id = patient_id.numpy().decode('utf-8')  # decode id
+        train_x[i, :, :, :] = image.numpy()  # get image from tensor
+        train_y[i, :] = poly_dict[decoded_id]  # get poly coefficients from dict
+
+        # delete data to clear memory
+        del train_x
+        del train_y
+
+
+def create_test_dataset():
+    """Create a numpy memory mapping of test set images.
+    The dataset will be of format (id, image of that id).
+    The mapping is stored at data/test.dat
+    """
+
+    # define test images path
+    test_path = IMAGES_GCS_PATH + '/test'
+
+    # get images dataset
+    images_dataset = image_data.get_images_dataset(test_path)
+
     # create memory mapping
-    dataset = np.memmap('data/train.dat', shape=(32994, 2), dtype=object, mode='w+')
+    test_images = np.memmap('data/test_images.dat', shape=(32994, *IMAGE_SIZE, 3), dtype='uint8', mode='w+')
+    test_ids = np.memmap('data/test_ids.dat', shape=(32994, 1), dtype='<U25', mode='w+')
 
     # iterate threw all images
     for i, (patient_id, image) in enumerate(images_dataset):
         # open memory mapping
-        dataset = np.memmap('data/train.dat', shape=(32994, 2), dtype=object, mode='r+')
+        test_images = np.memmap('data/test_images.dat', shape=(32994, *IMAGE_SIZE, 3), dtype='uint8', mode='r+')
+        test_ids = np.memmap('data/test_ids.dat', shape=(32994, 1), dtype='<25U', mode='r+')
 
         # write data to numpy memory mapping
         decoded_id = patient_id.numpy().decode('utf-8')  # decode id
-        dataset[i, 0] = image.numpy()  # get image from tensor
-        dataset[i, 1] = poly_dict[decoded_id]  # get poly coefficients from dict
+        test_images[i, 0] = decoded_id  # save id
+        dataset[i, 1] = image.numpy()  # get image from tensor
 
         # delete data to clear memory
         del dataset
 
 
 if __name__ == "__main__":
-    dataset = np.memmap('data/train.dat', shape=(32994, 2), dtype=object, mode='r')
-    import matplotlib.pyplot as plt
-    print(dataset[32993, 1])
-    plt.imshow(dataset[32993, 0])
-
+    a = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train')
+    for id, image in a.take(50):
+        print(np.array(id.numpy().decode('utf-8')).dtype)

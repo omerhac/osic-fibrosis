@@ -9,6 +9,7 @@
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/conda_env" />
+            <excludedPath path="/data" />
           </excludedPaths>
         </serverdata>
       </paths>

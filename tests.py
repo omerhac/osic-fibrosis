@@ -1,6 +1,7 @@
 import time
 import image_data
 import tensorflow as tf
+import numpy as np
 
 # GCS PATH to images
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
@@ -9,7 +10,7 @@ IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
 IMAGE_SIZE = [512, 512]
 
 
-def time_dataset_fetching():
+def time_images_dataset_by_id_fetching():
     """Time 5 full image retrival from patient records"""
     ds = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/train')
 
@@ -24,6 +25,7 @@ def time_dataset_fetching():
 
 
 def test_images_dataset():
+    """Test tf dataset of (id, image)"""
     images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train')
 
     for id, image in images_dataset.take(3):
@@ -33,3 +35,13 @@ def test_images_dataset():
     print("**TEST PASSED!**")
 
 
+def test_dataset_creation():
+    """Test full dataset, as np memmap saved at data"""
+    train_x = np.memmap('data/train_x.dat', shape=(32994, *IMAGE_SIZE, 3), dtype='uint8', mode='r')
+    train_y = np.memmap('data/train_y.dat', shape=(32994, 3), dtype='float32', mode='r')
+
+    for i in range(20):
+        assert train_x[i].shape == (*IMAGE_SIZE, 3), train_x[i].shape
+        assert train_y[i].shape == (3, ), train_y[i].shape
+
+    print("**TEST PASSED!**")
