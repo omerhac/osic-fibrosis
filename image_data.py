@@ -78,6 +78,7 @@ def get_images_dataset(path):
         # read image
         image = read_image(image_path)
         image = resize_and_crop_image(image)
+        image = tf.cast(image, tf.uint8)  # memory usage gonna be quite intense..
 
         return id, image
 
@@ -99,8 +100,8 @@ def resize_and_crop_image(image):
     th = IMAGE_SIZE[0]
     resize_crit = (w * th) / (h * tw)
     image = tf.cond(resize_crit < 1,
-                    lambda: tf.image.resize(image, [w*tw/w, h*tw/w]), # if true
-                    lambda: tf.image.resize(image, [w*th/h, h*th/h])  # if false
+                    lambda: tf.image.resize(image, [w*tw/w, h*tw/w]),  # if true
+                    lambda: tf.image.resize(image, [w*th/h, h*th/h])   # if false
                     )
     nw = tf.shape(image)[0]
     nh = tf.shape(image)[1]
