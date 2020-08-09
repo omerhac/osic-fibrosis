@@ -34,24 +34,33 @@ def fire(num_squeeze_filters, num_expand_filters, bnmoment=0.9):
 def get_model(image_size=IMAGE_SIZE):
     """Return a model that maps images to polynomial coefficients"""
 
+    # dimensionality reduction
     x = Input(shape=[*image_size, 3])
-    c1 = Conv2D(10, kernel_size=(3, 3), activation='relu', padding='valid')(x)
-    c1 = BatchNormalization(momentum=0.9)(c1)
-    c2 = Conv2D(20, kernel_size=(3, 3), activation='relu', padding='valid')(c1)
-    c2 = BatchNormalization(momentum=0.9)(c2)
-    mp1 = MaxPooling2D(pool_size=(2, 2))(c2)
+    c1 = Conv2D(96, kernel_size=(7, 7), strides=(2,2), activation='relu', padding='same')(x)
+    mp1 = MaxPooling2D(pool_size=(3, 3), strides=(2, 2))(c1)
 
-    # add fire blocks
-    fire1 = fire(20, 40)(mp1)
-    fire2 = fire(40, 80)(fire1)
-    fire3 = fire(80, 160)(fire2)
-    mp2 = MaxPooling2D(pool_size=(2, 2))(fire3)
-    fire4 = fire(160, 320)(mp2)
-    fire5 = fire(320, 640)(fire4)
+    # first section
+    fire1 = fire(16, 64)(mp1)
+    fire2 = fire(16, 64)(fire1)
+    fire3 = fire(32, 128)(fire2)
+    mp2 = MaxPooling2D(pool_size=(3, 3), strides=(2,2))(fire3)
 
-    ga = GlobalAveragePooling2D()(fire5)
-    dense_out = Dense(3, activation='linear')(ga)
+    # second section
+    fire4 = fire(32, 128)(mp2)
+    fire5 = fire(48, 192)(fire4)
+    fire6 = fire(48, 192)(fire5)
+    fire7 = fire(64, 256)(fire6)
+    mp3 = MaxPooling2D(pool_size=(3, 3), strides=(2, 2))(fire7)
 
+    # third section
+    fire8 = fire(64, 256)(mp3)
+    last_conv = Conv2D(1000, kernel_size=(1,1), strides=(1,1), activation='relu', padding='same')(fire8)
+    gap = GlobalAveragePooling2D()(last_conv)
+
+    # output
+    dense_out = Dense(3, activation='linear')(gap)
+
+    # compile
     model = tf.keras.Model(x, dense_out)
     model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
@@ -59,7 +68,9 @@ def get_model(image_size=IMAGE_SIZE):
 
 
 if __name__ == '__main__':
-    model = get_model(image_size=(128, 128))
+    model = get_model(image_size=(224, 224))
+    model.summary()
+    tf.keras.utils.plot_model(model, 'data/model.png')
     train_set = etl.get_tfrecord_train_dataset(image_size=(128,128))
     train_set = train_set.batch(16)
     model.fit(train_set)
