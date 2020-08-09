@@ -11,73 +11,58 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 IMAGE_SIZE = [512, 512]
 
 
-def inception_block(x, num_3_filters, num_1_filters, batch_norm_moment=0.9):
-    """ Get InceptionV2 style block"""
-    side_pool = MaxPooling2D(pool_size=(2, 2))(x)
-    # middle branch
-    middle_branch_1 = SeparableConv2D(num_1_filters, kernel_size=(1, 1), strides=(1, 1), activation='relu',
-                                      padding='same')(x)
-    middle_branch_1 = BatchNormalization(momentum=batch_norm_moment)(middle_branch_1)
-    middle_branch_3 = SeparableConv2D(num_3_filters, kernel_size=(3, 3), strides=(2, 2), activation='relu',
-                                      padding='same')(middle_branch_1)
-    middle_branch_3 = BatchNormalization(momentum=batch_norm_moment)(middle_branch_3)
+def fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment=0.9):
+    """" Creates a squeezenet style block.
+        Args: num_squeeze_filters should be about half of num_expand_filters"""
 
-    # big branch
-    big_branch_1 = SeparableConv2D(num_1_filters, kernel_size=(1, 1), strides=(1, 1), activation='relu',
-                                   padding='same')(x)
-    big_branch_1 = BatchNormalization(momentum=batch_norm_moment)(big_branch_1)
-    big_branch_3_1 = SeparableConv2D(num_3_filters, kernel_size=(3, 3), strides=(1, 1), padding='same',
-                                     activation='relu')(big_branch_1)
-    big_branch_3_1 = BatchNormalization(momentum=batch_norm_moment)(big_branch_3_1)
-    big_branch_3_2 = SeparableConv2D(num_3_filters, kernel_size=(3, 3), strides=(2, 2), activation='relu',
-                                     padding='same')(big_branch_3_1)
-    big_branch_3_2 = BatchNormalization(momentum=batch_norm_moment)(big_branch_3_2)
-
-    depth_concat = concatenate([side_pool, middle_branch_3, big_branch_3_2])
-
-    return depth_concat
+    squeeze = Conv2D(num_squeeze_filters, kernel_size=(1, 1), activation='relu', padding='same')(x)
+    squeeze = BatchNormalization(momentum=bnmoment)(squeeze)
+    expand3 = Conv2D(num_expand_filters, kernel_size=(3, 3), activation='relu', padding='same')(squeeze)
+    expand3 = BatchNormalization(momentum=bnmoment)(expand3)
+    expand1 = Conv2D(num_expand_filters, kernel_size=(1, 1), activation='relu', padding='same')(squeeze)
+    expand1 = BatchNormalization(momentum=bnmoment)(expand1)
+    return concatenate([expand3, expand1])
 
 
-def inception(num_3_filters, num_1_filters, batch_norm_moment=0.9):
-    """ Creates an Inception v2 style layer."""
+def fire(num_squeeze_filters, num_expand_filters, bnmoment=0.9):
+    """" Creates a squeezenet style layer (functional style).
+        Args: num_squeeze_filters should be about half of num_expand_filters"""
 
-    return lambda x: inception_block(x, num_3_filters, num_1_filters, batch_norm_moment=0.9)
+    return lambda x: fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment)
 
 
-def get_model():
+def get_model(image_size=IMAGE_SIZE):
     """Return a model that maps images to polynomial coefficients"""
 
-    # stem
-    x = Input(shape=[*IMAGE_SIZE, 3])
-    c1 = SeparableConv2D(6, kernel_size=(3, 3), padding='valid', activation='relu')(x)
+    x = Input(shape=[*image_size, 3])
+    c1 = Conv2D(10, kernel_size=(3, 3), activation='relu', padding='valid')(x)
     c1 = BatchNormalization(momentum=0.9)(c1)
-    c2 = SeparableConv2D(12, kernel_size=(3, 3), padding='valid', activation='relu')(c1)
+    c2 = Conv2D(20, kernel_size=(3, 3), activation='relu', padding='valid')(c1)
     c2 = BatchNormalization(momentum=0.9)(c2)
-    c3 = SeparableConv2D(24, kernel_size=(3, 3), padding='valid', activation='relu')(c2)
-    c3 = BatchNormalization(momentum=0.9)(c3)
-    mp1 = MaxPooling2D(pool_size=(2, 2))(c3)
-    c4 = SeparableConv2D(48, kernel_size=(3, 3), padding='valid', activation='relu')(mp1)
-    c4 = BatchNormalization(momentum=0.9)(c4)
-    c5 = SeparableConv2D(96, kernel_size=(3, 3), padding='valid', activation='relu')(c4)
-    c5 = BatchNormalization(momentum=0.9)(c5)
-    mp2 = MaxPooling2D(pool_size=(2, 2))(c5)
+    mp1 = MaxPooling2D(pool_size=(2, 2))(c2)
 
-    # inception blocks
-    #i1 = inception(192, 96)(mp2)
-    #i2 = inception(192, 384)(i1)
-    #i3 = inception(384, 768)(i2)
-    g = GlobalAveragePooling2D()(mp2)
-    d = Dense(3, activation='linear')(g)
-    model = tf.keras.Model(inputs=x, outputs=d)
+    # add fire blocks
+    fire1 = fire(20, 40)(mp1)
+    fire2 = fire(40, 80)(fire1)
+    fire3 = fire(80, 160)(fire2)
+    mp2 = MaxPooling2D(pool_size=(2, 2))(fire3)
+    fire4 = fire(160, 320)(mp2)
+    fire5 = fire(320, 640)(fire4)
+
+    ga = GlobalAveragePooling2D()(fire5)
+    dense_out = Dense(3, activation='linear')(ga)
+
+    model = tf.keras.Model(x, dense_out)
     model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
     return model
 
 
 if __name__ == '__main__':
-    ds = etl.get_tfrecord_train_dataset()
-    ds = ds.batch(16)
-    model = get_model()
-    model.fit(ds, epochs=1)
+    model = get_model(image_size=(128, 128))
+    train_set = etl.get_tfrecord_train_dataset(image_size=(128,128))
+    train_set = train_set.batch(16)
+    model.fit(train_set)
+
 
 
