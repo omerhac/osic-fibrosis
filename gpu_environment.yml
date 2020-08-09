@@ -1,0 +1,15 @@
+name: /home/paperspace/PycharmProjects/osic-fibrosis/conda_env
+channels:
+  - defaults
+dependencies:
+  - matplotlib
+  - numpy
+  - pandas
+  - python
+  - pydot
+  - seaborn
+  - cudatoolkit
+  - cudnn
+  - nccl
+  - tensorflow-gpu
+prefix: /home/paperspace/PycharmProjects/osic-fibrosis/conda_env

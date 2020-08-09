@@ -5,7 +5,7 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, Ma
     , concatenate, GlobalAveragePooling2D
 
 # Just disables the warning, doesn't enable AVX/FMA
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Constants
 IMAGE_SIZE = [512, 512]
@@ -68,12 +68,12 @@ def get_model(image_size=IMAGE_SIZE):
 
 
 if __name__ == '__main__':
+    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
     model = get_model(image_size=(224, 224))
-    model.summary()
-    tf.keras.utils.plot_model(model, 'data/model.png')
-    train_set = etl.get_tfrecord_train_dataset(image_size=(128,128))
+    train_set = etl.get_tfrecord_train_dataset(image_size=(224, 224))
     train_set = train_set.batch(16)
     model.fit(train_set)
+
 
 
 
