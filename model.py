@@ -63,10 +63,10 @@ def get_model():
     mp2 = MaxPooling2D(pool_size=(2, 2))(c5)
 
     # inception blocks
-    i1 = inception(192, 96)(mp2)
-    i2 = inception(192, 384)(i1)
+    #i1 = inception(192, 96)(mp2)
+    #i2 = inception(192, 384)(i1)
     #i3 = inception(384, 768)(i2)
-    g = GlobalAveragePooling2D()(i2)
+    g = GlobalAveragePooling2D()(mp2)
     d = Dense(3, activation='linear')(g)
     model = tf.keras.Model(inputs=x, outputs=d)
     model.compile(optimizer='adam', loss='mse', metrics=['mse'])

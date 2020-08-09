@@ -24,7 +24,6 @@ SHARDS = 16
 SHARD_SIZE = math.ceil(1.0 * 33000 / SHARDS)
 
 
-
 # Three types of data can be stored in TFRecords: bytestrings, integers and floats
 # They are always stored as lists, a single data element will be a list of size 1
 
@@ -85,7 +84,7 @@ def write_train_tfrecords():
             print("Wrote file {} containing {} records".format(filename, shard_size))
 
 
-def read_tfrecord(example):
+def read_tfrecord(example, image_size=IMAGE_SIZE):
     features = {
         "image": tf.io.FixedLenFeature([], tf.string),  # tf.string = bytestring (not text string)
         "id": tf.io.FixedLenFeature([], tf.string),
@@ -99,7 +98,7 @@ def read_tfrecord(example):
 
     # decode image
     image = tf.image.decode_jpeg(example['image'], channels=3)
-    image = image_data.resize_and_crop_image(image) # crop to IMAGE_SIZE
+    image = image_data.resize_and_crop_image(image, image_size)  # crop to image_size
     image = tf.cast(image, tf.uint8)  # cast for memory efficiency
 
     # get id

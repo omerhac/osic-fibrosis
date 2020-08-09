@@ -83,10 +83,13 @@ def create_test_dataset():
         del test_ids
 
 
-def get_tfrecord_train_dataset():
+def get_tfrecord_train_dataset(image_size=IMAGE_SIZE):
     """Read from TFRecords. For optimal performance, read from multiple
     TFRecord files at once and set the option experimental_deterministic = False
-    to allow order-altering optimizations."""
+    to allow order-altering optimizations.
+    Args:
+        image_size--common image size in dataset
+    """
 
     option_no_order = tf.data.Options()
     option_no_order.experimental_deterministic = False
@@ -94,11 +97,17 @@ def get_tfrecord_train_dataset():
     filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
     train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
     train_dataset = train_dataset.with_options(option_no_order)
-    train_dataset = train_dataset.map(tf_record_writer.read_tfrecord, num_parallel_calls=AUTO)
+
+    # add resizing capability
+    read_tfrecord_and_resize = lambda example: tf_record_writer.read_tfrecord(example, image_size=image_size)
+
+    train_dataset = train_dataset.map(read_tfrecord_and_resize, num_parallel_calls=AUTO)
 
     return train_dataset
 
 
 if __name__ == "__main__":
-    train_data = get_tfrecord_train_dataset()
+    train_data = get_tfrecord_train_dataset(image_size=(256, 256))
+    for image, coeffs in train_data.take(2):
+        print(image.numpy().shape)
 

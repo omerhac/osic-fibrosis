@@ -2,6 +2,7 @@ import time
 import image_data
 import tensorflow as tf
 import numpy as np
+import etl
 import tf_record_writer
 
 # GCS PATH to images
@@ -50,7 +51,7 @@ def test_dataset_creation():
 
 def test_tfrecords_dataset():
     """Test tfrcords format on the cloud"""
-    tfrecords = tf_record_writer.get_train_dataset()
+    tfrecords = etl.get_tfrecord_train_dataset()
     for id, image, poly in tfrecords.take(5):
         assert isinstance(id.numpy().decode('utf-8'), str)
         assert poly.numpy().shape == (3, ), poly.shape

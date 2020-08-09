@@ -58,7 +58,7 @@ def get_images_dataset_by_id(path):
     return images_dataset
 
 
-def get_images_dataset(path, decode_images=True):
+def get_images_dataset(path, decode_images=True, image_size=IMAGE_SIZE):
     """Create images dataset from gcs path
     The dataset contains tuples of format (tensor(id), one image of that id)
 
@@ -83,7 +83,7 @@ def get_images_dataset(path, decode_images=True):
         image = read_image(image_path, decode=decode_images)
 
         if decode_images:
-            image = resize_and_crop_image(image)
+            image = resize_and_crop_image(image, image_size)
             image = tf.cast(image, tf.uint8)  # memory usage gonna be quite intense..
 
         return id, image
@@ -92,7 +92,7 @@ def get_images_dataset(path, decode_images=True):
     return images_dataset
 
 
-def resize_and_crop_image(image):
+def resize_and_crop_image(image, new_size=IMAGE_SIZE):
     """ Resize and crop using "fill" algorithm:
     always make sure the resulting image
     is cut out from the source image so that
@@ -102,8 +102,8 @@ def resize_and_crop_image(image):
 
     w = tf.shape(image)[0]
     h = tf.shape(image)[1]
-    tw = IMAGE_SIZE[1]
-    th = IMAGE_SIZE[0]
+    tw = new_size[1]
+    th = new_size[0]
     resize_crit = (w * th) / (h * tw)
     image = tf.cond(resize_crit < 1,
                     lambda: tf.image.resize(image, [w*tw/w, h*tw/w]),  # if true
