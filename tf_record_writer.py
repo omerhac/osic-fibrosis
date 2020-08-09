@@ -7,7 +7,7 @@ import math
 import os
 
 # ENVIRONMENT
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cloud/gcloud_key.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cloud/gcloud_key.json"  # gcs authentication
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
@@ -50,6 +50,12 @@ def to_tfrecord(tfrec_filewriter, img_bytes, id, poly_coeffs):
 
 
 def write_train_tfrecords():
+    """Write the train dataset to tfrecords format on the cloud.
+    format:
+            example['image']--bytestring image
+            example['id']--bytestring id
+            example['coeffs']--float list
+    """
 
     # get data
     images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train', decode_images=False)  # dont decode images for tfrecords writing
@@ -59,7 +65,7 @@ def write_train_tfrecords():
     images_dataset = images_dataset.batch(SHARD_SIZE)
 
     print("Writing TFRecords")
-    for shard, (ids, images) in enumerate(images_dataset):
+    for shard, (ids, images) in enumerate(images_dataset.take(2)):
         # batch size used as shard size here
         shard_size = images.numpy().shape[0]
         # good practice to have the number of records in the filename
@@ -77,5 +83,53 @@ def write_train_tfrecords():
             print("Wrote file {} containing {} records".format(filename, shard_size))
 
 
+def read_tfrecord(example):
+    features = {
+        "image": tf.io.FixedLenFeature([], tf.string),  # tf.string = bytestring (not text string)
+        "id": tf.io.FixedLenFeature([], tf.string),
+        "coeffs": tf.io.FixedLenFeature([3], tf.float32)  # 3 floats
+    }
+
+    # decode the TFRecord
+    example = tf.io.parse_single_example(example, features)
+
+    # FixedLenFeature fields are now ready to use: exmple['size']
+
+    # decode image
+    image = tf.image.decode_jpeg(example['image'], channels=3)
+    image = image_data.resize_and_crop_image(image) # crop to IMAGE_SIZE
+    image = tf.cast(image, tf.uint8)  # cast for memory efficiency
+
+    # get id
+    id = example['id']
+
+    # get polynomial coeffs
+    poly_coeffs = example['coeffs']
+
+    return id, image, poly_coeffs
+
+
+def get_train_dataset():
+    """Read from TFRecords. For optimal performance, read from multiple
+    TFRecord files at once and set the option experimental_deterministic = False
+    to allow order-altering optimizations."""
+
+    option_no_order = tf.data.Options()
+    option_no_order.experimental_deterministic = False
+
+    filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
+    train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
+    train_dataset = train_dataset.with_options(option_no_order)
+    train_dataset = train_dataset.map(read_tfrecord, num_parallel_calls=AUTO)
+
+    return  train_dataset
+
 if __name__ == '__main__':
-    write_train_tfrecords()
+    d = get_train_dataset()
+
+    for id, image, poly in d.take(1):
+        print(id.numpy().decode('utf-8'))
+        print(poly.numpy())
+        plt.figure()
+        plt.imshow(image.numpy())
+        plt.show()
