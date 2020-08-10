@@ -52,44 +52,6 @@ def get_patient_percent_poly(table, id, order=2):
     return coeffs
 
 
-def plot_patient_fvc(table, id, order=2):
-    """Plot patients FVC history along with a polynomial regression"""
-    plt.figure(figsize=(8,8))
-    hist = get_fvc_hist(table, id)  # get fvc hist
-    coeffs = get_patient_fvc_poly(table, id, order=order)
-
-    # plot
-    sns.regplot(hist["Weeks"], hist["FVC"], order=order)
-
-    # get title
-    title = "y = "
-    for deg, coeff in enumerate(coeffs[::-1]):
-        title = title +"{}x^{} + ".format(coeff, deg)
-
-    title = title[:-2] # remove end
-    plt.title(title)
-    plt.show()
-
-
-def plot_patient_percent(table, id, order=2):
-    """Plot patients Percent history along with a polynomial regression"""
-    plt.figure(figsize=(8,8))
-    hist = get_percent_hist(table, id)  # get fvc hist
-    coeffs = get_patient_percent_poly(table, id, order=order)
-
-    # plot
-    sns.regplot(hist["Weeks"], hist["Percent"], order=order)
-
-    # get title
-    title = "y = "
-    for deg, coeff in enumerate(coeffs[::-1]):
-        title = title +"{}x^{} + ".format(coeff, deg)
-
-    title = title[:-2]  # remove end
-    plt.title(title)
-    plt.show()
-
-
 def get_poly_fvc_dict():
     """Return a dict with a mapping from id to their polynomial fvc estimation coeffs"""
     table = get_train_table()
@@ -128,29 +90,6 @@ def get_patient_fvc_exp(table, id):
     neg_k, logI = np.polyfit(weeks, log_fvc, deg=1)
 
     return -neg_k
-
-
-def plot_patient_exp(table, id):
-    """Plot patient exponential regression"""
-    hist = get_fvc_hist(table, id)
-
-    # get coeff
-    k = get_patient_fvc_exp(table, id)
-
-    # plot fvc
-    plt.figure()
-    sns.scatterplot(hist["Weeks"], hist["FVC"], color='red')
-
-    # get exponent
-    weeks = np.linspace(hist.iloc[0, 0], hist.iloc[-1, 0], 100)
-    func = lambda week: hist.iloc[0, 1] * np.exp(-k * week)
-
-    # evaluate values
-    eval_values = func(weeks - weeks[0])  # center weeks before feeding to exp function
-
-    # plot evaluated values
-    sns.scatterplot(weeks, eval_values, color='blue')
-    plt.show()
 
 
 def get_exp_fvc_dict():
