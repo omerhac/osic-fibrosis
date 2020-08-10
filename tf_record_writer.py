@@ -14,7 +14,7 @@ AUTO = tf.data.experimental.AUTOTUNE
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
 
 # GCS tfrecords path
-TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512'
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp'
 
 # images size
 IMAGE_SIZE = [512, 512]
@@ -40,12 +40,12 @@ def _float_feature(list_of_floats):  # float32
     return tf.train.Feature(float_list=tf.train.FloatList(value=list_of_floats))
 
 
-def to_tfrecord(tfrec_filewriter, img_bytes, id, poly_coeffs):
+def to_tfrecord(tfrec_filewriter, img_bytes, id, exp_coeff):
     """Convert data to one tf.train.Example"""
     feature = {
         "image": _bytestring_feature([img_bytes]),  # one image in the list
         "id": _bytestring_feature([id]),  # one id in the list
-        "coeffs": _float_feature(poly_coeffs) # 3 floats in the list
+        "coeff": _float_feature(exp_coeff) # 1 floats in the list
     }
     return tf.train.Example(features=tf.train.Features(feature=feature))
 
@@ -66,7 +66,7 @@ def write_tfrecords(for_val=False):
     else:
         images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train', decode_images=False)  # dont decode images for tfrecords writing
 
-    poly_dict = table_data.get_poly_fvc_dict()  # polynomial coefficiants for every patient
+    exp_dict = table_data.get_exp_fvc_dict()  # polynomial coefficiants for every patient
 
     # batch
     images_dataset = images_dataset.batch(SHARD_SIZE)
@@ -83,12 +83,12 @@ def write_tfrecords(for_val=False):
 
         with tf.io.TFRecordWriter(filename) as out_file:
             for i in range(shard_size):
-                poly_coeffs = poly_dict[ids.numpy()[i].decode('utf-8')].tolist() # get patient coeffs
+                exp_coeff = exp_dict[ids.numpy()[i].decode('utf-8')].tolist() # get patient coeffs
 
                 example = to_tfrecord(out_file,
                                       images.numpy()[i],  # compressed image: already a byte string
                                       ids.numpy()[i],
-                                      poly_coeffs)
+                                      [exp_coeff])  # must be in a list to be iterable
                 out_file.write(example.SerializeToString())
             print("Wrote file {} containing {} records".format(filename, shard_size))
 
@@ -97,7 +97,7 @@ def read_tfrecord(example, image_size=IMAGE_SIZE):
     features = {
         "image": tf.io.FixedLenFeature([], tf.string),  # tf.string = bytestring (not text string)
         "id": tf.io.FixedLenFeature([], tf.string),
-        "coeffs": tf.io.FixedLenFeature([3], tf.float32)  # 3 floats
+        "coeff": tf.io.FixedLenFeature([], tf.float32)  # 1 floats
     }
 
     # decode the TFRecord
@@ -114,9 +114,9 @@ def read_tfrecord(example, image_size=IMAGE_SIZE):
     id = example['id']
 
     # get polynomial coeffs
-    poly_coeffs = example['coeffs']
+    exp_coeff = example['coeff']
 
-    return image, poly_coeffs # TODO: ADD ID TO RETURN
+    return image, exp_coeff  # TODO: ADD ID TO RETURN
 
 
 if __name__ == '__main__':

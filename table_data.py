@@ -153,8 +153,7 @@ def plot_patient_exp(table, id):
     plt.show()
 
 
-
-def get_poly_fvc_dict():
+def get_exp_fvc_dict():
     """Return a dict with a mapping from id to their exponential fvc estimation coefficient"""
     table = get_train_table()
     exp_dict = {}
@@ -165,7 +164,7 @@ def get_poly_fvc_dict():
     # iterate threw every id
     for id in ids:
         k = get_patient_fvc_exp(table, id)
-        polys_dict[id] = k
+        exp_dict[id] = k
 
     return exp_dict
 
@@ -173,4 +172,7 @@ def get_poly_fvc_dict():
 # TODO: delete this
 if __name__ == "__main__""":
     ds = get_train_table()
-    plot_patient_exp(ds, "ID00132637202222178761324")
+    plot_patient_exp(ds, "ID00030637202181211009029")
+    e = get_exp_fvc_dict()
+    for k in e.keys():
+        print(e[k])

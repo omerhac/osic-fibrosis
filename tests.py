@@ -51,10 +51,10 @@ def test_dataset_creation():
 
 def test_tfrecords_dataset():
     """Test tfrcords format on the cloud"""
-    tfrecords = etl.get_tfrecord_train_dataset()
-    for id, image, poly in tfrecords.take(5):
-        assert isinstance(id.numpy().decode('utf-8'), str)
-        assert poly.numpy().shape == (3, ), poly.shape
+    tfrecords = etl.get_tfrecord_dataset()
+    for image, k in tfrecords.take(5):
+        #assert isinstance(id.numpy().decode('utf-8'), str)
+        assert k.numpy().dtype == np.float32, k.numpy().dtype
         assert image.numpy().shape == (*IMAGE_SIZE, 3), image.numpy().shape
 
     print("*TEST PASSED!**")
