@@ -121,14 +121,56 @@ def get_patient_fvc_exp(table, id):
     weeks = hist["Weeks"]
     log_fvc = np.log(hist["FVC"])
 
+    # center weeks - set 0 for first measurement
+    weeks = weeks - hist.iloc[0,0]
+
     # regress to find logI -kt
     neg_k, logI = np.polyfit(weeks, log_fvc, deg=1)
 
     return -neg_k
 
 
+def plot_patient_exp(table, id):
+    """Plot patient exponential regression"""
+    hist = get_fvc_hist(table, id)
+
+    # get coeff
+    k = get_patient_fvc_exp(table, id)
+
+    # plot fvc
+    plt.figure()
+    sns.scatterplot(hist["Weeks"], hist["FVC"], color='red')
+
+    # get exponent
+    weeks = np.linspace(hist.iloc[0, 0], hist.iloc[-1, 0], 100)
+    func = lambda week: hist.iloc[0, 1] * np.exp(-k * week)
+
+    # evaluate values
+    eval_values = func(weeks - weeks[0])  # center weeks before feeding to exp function
+
+    # plot evaluated values
+    sns.scatterplot(weeks, eval_values, color='blue')
+    plt.show()
+
+
+
+def get_poly_fvc_dict():
+    """Return a dict with a mapping from id to their exponential fvc estimation coefficient"""
+    table = get_train_table()
+    exp_dict = {}
+
+    # get unique ids
+    ids = table["Patient"].unique()
+
+    # iterate threw every id
+    for id in ids:
+        k = get_patient_fvc_exp(table, id)
+        polys_dict[id] = k
+
+    return exp_dict
+
+
 # TODO: delete this
 if __name__ == "__main__""":
     ds = get_train_table()
-    plot_patient_fvc(ds, "ID00007637202177411956430")
-    print(get_patient_fvc_exp(ds, "ID00007637202177411956430"))
+    plot_patient_exp(ds, "ID00132637202222178761324")
