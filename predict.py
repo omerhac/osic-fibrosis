@@ -2,6 +2,7 @@ import image_data
 import tensorflow as tf
 import table_data
 import numpy as np
+import visualize
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
@@ -48,4 +49,5 @@ def exponent_generator(path):
 
 if __name__ == '__main__':
     g = exponent_generator(IMAGES_GCS_PATH + '/validation')
-    print(next(g))
+    id, exp_func = next(g)
+    visualize.plot_patient_exp(id, exp_function=exp_func)
