@@ -15,6 +15,7 @@ IMAGE_SIZE = [512, 512]
 # GCS tfrecords path
 TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp'
 
+
 def create_train_dataset():
     """Create a numpy memory mapping of tuples of format (image, poly_coeffs).
     poly_coeffs is a (3, ) np.array with coefficients of the polynomial function

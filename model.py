@@ -58,7 +58,7 @@ def get_model(image_size=IMAGE_SIZE):
     gap = GlobalAveragePooling2D()(last_conv)
 
     # output
-    dense_out = Dense(3, activation='linear')(gap)
+    dense_out = Dense(1, activation='linear')(gap)  # predict the exponential coefficient
 
     # compile
     model = tf.keras.Model(x, dense_out)

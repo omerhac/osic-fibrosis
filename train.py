@@ -9,7 +9,7 @@ IMAGE_SIZE = (224, 224)
 
 
 def train_model():
-    """Train the model. Save weights to ***"""
+    """Train the model. Save weights to model_weights. Return history dict"""
     # get datasets
     train_dataset = etl.get_tfrecord_dataset(image_size=IMAGE_SIZE)
     val_dataset = etl.get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=True)
@@ -23,11 +23,13 @@ def train_model():
     network = model.get_model(IMAGE_SIZE)
 
     # train
-    network.fit(train_dataset, epochs=EPOCHS, steps_per_epoch=STEPS_PER_EPOCH,
-                batch_size=BATCH_SIZE, validation_data=val_dataset)
+    history = network.fit(train_dataset, epochs=EPOCHS, steps_per_epoch=STEPS_PER_EPOCH,
+                          batch_size=BATCH_SIZE, validation_data=val_dataset)
 
     # save model
     network.save('model_weights/model')
+
+    return history.history
 
 
 if __name__ == '__main__':

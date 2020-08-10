@@ -50,23 +50,24 @@ def to_tfrecord(tfrec_filewriter, img_bytes, id, exp_coeff):
     return tf.train.Example(features=tf.train.Features(feature=feature))
 
 
-def write_tfrecords(for_val=False):
+def write_tfrecords(type='train'):
     """Write the train dataset to tfrecords format on the cloud.
     Args:
-        for_val--flag to wirte validation data
+        type--type of dataset, available values: train, validation, test
     format:
             example['image']--bytestring image
             example['id']--bytestring id
-            example['coeffs']--float list
+            example['coeff']--float list of one value
     """
 
-    # get data
-    if for_val:
-        images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/validation', decode_images=False)
-    else:
-        images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train', decode_images=False)  # dont decode images for tfrecords writing
+    # check type
+    assert type == 'train' or type == 'validation' or type =='test', "type should be train/validion/test"
 
-    exp_dict = table_data.get_exp_fvc_dict()  # polynomial coefficiants for every patient
+    # get data
+    images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/' + type, decode_images=False)  # dont decode images for tfrecords writing
+
+    if type != 'test':  # not for test patients..
+        exp_dict = table_data.get_exp_fvc_dict()  # exponential coefficient for every patient
 
     # batch
     images_dataset = images_dataset.batch(SHARD_SIZE)
@@ -76,19 +77,24 @@ def write_tfrecords(for_val=False):
         # batch size used as shard size here
         shard_size = images.numpy().shape[0]
         # good practice to have the number of records in the filename
-        if for_val:
-            filename = TF_RECORDS_PATH + "/validation/{:02d}-{}.tfrec".format(shard, shard_size)
-        else:
-            filename = TF_RECORDS_PATH + "/{:02d}-{}.tfrec".format(shard, shard_size)
+        filename = TF_RECORDS_PATH + '/' + type + "/{:02d}-{}.tfrec".format(shard, shard_size)
 
         with tf.io.TFRecordWriter(filename) as out_file:
             for i in range(shard_size):
-                exp_coeff = exp_dict[ids.numpy()[i].decode('utf-8')].tolist() # get patient coeffs
+                # different files for val/train and test
+                if type != 'test':
+                    exp_coeff = exp_dict[ids.numpy()[i].decode('utf-8')].tolist() # get patient coeffs
+                    example = to_tfrecord(out_file,
+                                          images.numpy()[i],  # compressed image: already a byte string
+                                          ids.numpy()[i],
+                                          [exp_coeff])  # must be in a list to be iterable
 
-                example = to_tfrecord(out_file,
-                                      images.numpy()[i],  # compressed image: already a byte string
-                                      ids.numpy()[i],
-                                      [exp_coeff])  # must be in a list to be iterable
+                else:
+                    example = to_tfrecord(out_file,
+                                          images.numpy()[i],  # compressed image: already a byte string
+                                          ids.numpy()[i])
+
+                # write file to cloud
                 out_file.write(example.SerializeToString())
             print("Wrote file {} containing {} records".format(filename, shard_size))
 

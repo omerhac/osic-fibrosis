@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import visualize
 
 
 def get_train_table():
@@ -128,8 +129,9 @@ def is_outlier(points, thresh=3.5):
         Handle Outliers", The ASQC Basic References in Quality Control:
         Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
     """
+
     if len(points.shape) == 1:
-        points = points[:,None]
+        points = points[:, None]
     median = np.median(points, axis=0)
     diff = np.sum((points - median)**2, axis=-1)
     diff = np.sqrt(diff)
@@ -143,7 +145,7 @@ def is_outlier(points, thresh=3.5):
 # TODO: delete this
 if __name__ == "__main__""":
     ds = get_train_table()
-    plot_patient_exp(ds, "ID00030637202181211009029")
+    visualize.plot_patient_exp(ds, "ID00030637202181211009029")
     e = get_exp_fvc_dict()
     for k in e.keys():
         print(e[k])
