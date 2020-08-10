@@ -126,5 +126,7 @@ def read_tfrecord(example, image_size=IMAGE_SIZE):
 
 
 if __name__ == '__main__':
-    write_tfrecords()
-    write_tfrecords(for_val=True)
+    write_tfrecords(type='train')
+    write_tfrecords(type='validation')
+    write_tfrecords(type='test')
+    
