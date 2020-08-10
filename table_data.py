@@ -142,10 +142,14 @@ def is_outlier(points, thresh=3.5):
     return modified_z_score > thresh
 
 
+def get_initial_fvc(id):
+    """Return the week number and FVC value of the first measurement"""
+    table = get_train_table()
+    hist = get_fvc_hist(table, id)
+
+    return hist.iloc[0,0], hist.iloc[0,1]
+
+
 # TODO: delete this
 if __name__ == "__main__""":
-    ds = get_train_table()
-    visualize.plot_patient_exp(ds, "ID00030637202181211009029")
-    e = get_exp_fvc_dict()
-    for k in e.keys():
-        print(e[k])
+    print(get_initial_fvc("ID00030637202181211009029"))

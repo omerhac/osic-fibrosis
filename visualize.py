@@ -4,8 +4,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def plot_patient_exp(table, id):
-    """Plot patient exponential regression"""
+def plot_patient_exp(table, id, exp_function=None):
+    """Plot patient exponential regression
+    Args:
+        exp_functiion--function describing FVC progression
+    """
     hist = table_data.get_fvc_hist(table, id)
 
     # get coeff
