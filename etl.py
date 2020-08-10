@@ -96,7 +96,7 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
 
     # check whether for validation
     if validation:
-        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/val/*.tfrec")
+        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/validation/*.tfrec")
     else:
         filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
 

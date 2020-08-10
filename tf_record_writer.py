@@ -50,8 +50,10 @@ def to_tfrecord(tfrec_filewriter, img_bytes, id, poly_coeffs):
     return tf.train.Example(features=tf.train.Features(feature=feature))
 
 
-def write_train_tfrecords():
+def write_tfrecords(for_val=False):
     """Write the train dataset to tfrecords format on the cloud.
+    Args:
+        for_val--flag to wirte validation data
     format:
             example['image']--bytestring image
             example['id']--bytestring id
@@ -59,7 +61,11 @@ def write_train_tfrecords():
     """
 
     # get data
-    images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train', decode_images=False)  # dont decode images for tfrecords writing
+    if for_val:
+        images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/validation', decode_images=False)
+    else:
+        images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/train', decode_images=False)  # dont decode images for tfrecords writing
+
     poly_dict = table_data.get_poly_fvc_dict()  # polynomial coefficiants for every patient
 
     # batch
@@ -70,7 +76,10 @@ def write_train_tfrecords():
         # batch size used as shard size here
         shard_size = images.numpy().shape[0]
         # good practice to have the number of records in the filename
-        filename = TF_RECORDS_PATH + "/{:02d}-{}.tfrec".format(shard, shard_size)
+        if for_val:
+            filename = TF_RECORDS_PATH + "/validation/{:02d}-{}.tfrec".format(shard, shard_size)
+        else:
+            filename = TF_RECORDS_PATH + "/{:02d}-{}.tfrec".format(shard, shard_size)
 
         with tf.io.TFRecordWriter(filename) as out_file:
             for i in range(shard_size):
@@ -111,4 +120,5 @@ def read_tfrecord(example, image_size=IMAGE_SIZE):
 
 
 if __name__ == '__main__':
-    write_train_tfrecords()
+    write_tfrecords()
+    write_tfrecords(for_val=True)

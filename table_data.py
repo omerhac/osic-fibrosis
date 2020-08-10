@@ -63,7 +63,7 @@ def plot_patient_fvc(table, id, order=2):
 
     # get title
     title = "y = "
-    for deg, coeff in enumerate(coeffs):
+    for deg, coeff in enumerate(coeffs[::-1]):
         title = title +"{}x^{} + ".format(coeff, deg)
 
     title = title[:-2] # remove end
@@ -82,7 +82,7 @@ def plot_patient_percent(table, id, order=2):
 
     # get title
     title = "y = "
-    for deg, coeff in enumerate(coeffs):
+    for deg, coeff in enumerate(coeffs[::-1]):
         title = title +"{}x^{} + ".format(coeff, deg)
 
     title = title[:-2]  # remove end
@@ -106,18 +106,29 @@ def get_poly_fvc_dict():
     return polys_dict
 
 
-def get_dataset_from_dict(dict):
-    """Create a dataset from a dict with mapping from patient id and their polynomial fvc coeffs."""
-    id_list, poly_list = [], []
+def get_patient_fvc_exp(table, id):
+    """Get a patient exponential coefficient.
+    Each patient has his own fvc progression that can be described by Ie^-kt.
+    Wheres I is the initial FCV measure, k is the exponential coefficient and t is time.
+    Args:
+        table--data table with records
+        id--id of the patient
+    """
 
-    for id in dict.keys():
-        id_list.append(id)
-        poly_list.append(dict[id])
+    hist = get_fvc_hist(table, id)
 
-    return np.stack(id_list), np.stack(poly_list)
+    # compute logs
+    weeks = hist["Weeks"]
+    log_fvc = np.log(hist["FVC"])
+
+    # regress to find logI -kt
+    neg_k, logI = np.polyfit(weeks, log_fvc, deg=1)
+
+    return -neg_k
 
 
 # TODO: delete this
 if __name__ == "__main__""":
     ds = get_train_table()
-    print(get_patient_fvc_poly(ds, "ID00007637202177411956430"))
+    plot_patient_fvc(ds, "ID00007637202177411956430")
+    print(get_patient_fvc_exp(ds, "ID00007637202177411956430"))
