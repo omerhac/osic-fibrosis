@@ -66,10 +66,12 @@ def exponent_generator(path, for_test=False):
         yield id, exp_func
 
 
-def predict_test(save_path):
-    """Predict test set and generate a submission file"""
-    # test images path
-    test_path = IMAGES_GCS_PATH + '/test'
+def predict_test(save_path, test_path=IMAGES_GCS_PATH + 'test'):
+    """Predict test set and generate a submission file
+    Args:
+        save_path: where to save predictions
+        test_path: path to test images
+    """
 
     # get generator
     exp_gen = exponent_generator(test_path, for_test=True)
