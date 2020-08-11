@@ -4,13 +4,18 @@ import visualize
 
 
 def get_train_table():
-    """Returns a dataframe with train records"""
+    """Return a dataframe with train records"""
     return pd.read_csv('train.csv')
 
 
 def get_test_table():
-    """Returns a dataframe with test records"""
+    """Return a dataframe with test records"""
     return pd.read_csv('test.csv')
+
+
+def get_submission_table():
+    """Return a dataframe with submission format"""
+    return pd.read_csv('submissions/sample_submission.csv')
 
 
 def get_fvc_hist(table, id):
@@ -146,7 +151,7 @@ def get_initial_fvc(id, for_test=False):
     """Return the week number and FVC value of the first measurement"""
     if for_test:
         table = get_test_table()
-        return table[table["Patient"] == id]["Week"], table[table["Patient"] == id]["FVC"]
+        return float(table.loc[table["Patient"] == id]["Weeks"]), float(table[table["Patient"] == id]["FVC"])
 
     else:
         table = get_train_table()
@@ -156,4 +161,5 @@ def get_initial_fvc(id, for_test=False):
 
 # TODO: delete this
 if __name__ == "__main__""":
-    print(get_initial_fvc("ID00030637202181211009029"))
+    week, fvc = get_initial_fvc("ID00423637202312137826377")
+    print(week.dtype)

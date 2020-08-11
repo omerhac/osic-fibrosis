@@ -79,9 +79,9 @@ def plot_training_curves(hist):
 
     plt.figure()
 
-    # plot loss
-    plt.plot(hist["loss"], color='blue', label='loss')
-    plt.plot(hist["val_loss"], color='orange', label='val_loss')
+    # plot loss from epoch 3 onward
+    plt.plot(hist["loss"][3:], color='blue', label='loss')
+    plt.plot(hist["val_loss"][3:], color='orange', label='val_loss')
     plt.show()
 
 
