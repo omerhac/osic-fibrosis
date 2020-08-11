@@ -82,7 +82,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test'):
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
 
     # get submission form
-    create_submission_form(save_path)
+    create_submission_form(save_path, test_path=test_path)
     submission = pd.read_csv(save_path)
 
     # broadcast 50 Confidence level
@@ -98,10 +98,8 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test'):
     submission.to_csv(save_path)
 
 
-def create_submission_form(save_path):
+def create_submission_form(save_path, test_path=IMAGES_GCS_PATH + '/test'):
     """Create a submission form to fill later"""
-    # test images path
-    test_path = IMAGES_GCS_PATH + '/test'
     image_dataset = image_data.get_images_dataset_by_id(test_path)
 
     # weeks to predict range
