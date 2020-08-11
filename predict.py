@@ -3,6 +3,7 @@ import tensorflow as tf
 import table_data
 import numpy as np
 import visualize
+import pandas as pd
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
@@ -16,14 +17,17 @@ class ExpFunc:
     Attributes:
         _initial_value--initial value to start decay
         _exponent_coefficient--k value from A*e^-kt
+        _shift--a constant shift to center time to
     """
-    def __init__(self, initial_value, exponential_coeff):
+
+    def __init__(self, initial_value, exponential_coeff, shift):
         self._initial_value = initial_value
         self._exponential_coefficient = exponential_coeff
+        self._shift = shift
 
     def __call__(self, time):
-        return self._initial_value * np.exp(-self._exponential_coefficient * time)
-    
+        return self._initial_value * np.exp(-self._exponential_coefficient * (time - self._shift))
+
 
 def exponent_generator(path, for_test=False):
     """Create a generator which returns exponent function for patients whose images are at path.
@@ -57,12 +61,9 @@ def exponent_generator(path, for_test=False):
         # create exponent
         id = patient.numpy().decode('utf-8')
         initial_week, initial_fvc = table_data.get_initial_fvc(id, for_test=for_test)
-        print(initial_week, initial_fvc, avg_coeff)
+        exp_func = ExpFunc(initial_fvc, avg_coeff, initial_week)  # create exponent function
 
-        def exp_func(week):
-            return initial_fvc * np.exp(-avg_coeff * (week - initial_week))
-        e = exp_func
-        yield id, e
+        yield id, exp_func
 
 
 def predict_test(save_path):
@@ -86,21 +87,31 @@ def predict_test(save_path):
     for index, row in submission.iterrows():
         id, week = row["Patient_Week"].split('_')
         week = float(week)
-        # predict
-        print(exp_dict[id](week))
         submission.loc[index, "FVC"] = exp_dict[id](week)
 
     # save
     submission.to_csv(save_path)
 
 
+def create_submission_form(save_path):
+    """Create a submission form to fill later"""
+    # test images path
+    test_path = IMAGES_GCS_PATH + '/test'
+    image_dataset = image_data.get_images_dataset_by_id(test_path)
+
+    # weeks to predict range
+    weeks = range(-12, 134)
+
+    # create form
+    form = pd.DataFrame(columns=["Patient_Week", "FVC", "Confidence"], index=None)
+    for id, images in image_dataset:
+        id = id.numpy().decode('utf-8')
+        for week in weeks:
+            form = form.append({"Patient_Week": id + '_' + str(week), "FVC": 0, "Confidence": 0}, ignore_index=True)
+
+    form.to_csv(save_path, index=False)
+
+
 if __name__ == '__main__':
     #predict_test('submissions/sub_1.csv')
-    #sub = table_data.get_submission_table()
-    #sub.loc[0, "FVC"] = 0
-    #print(sub.head(5))
-    g = exponent_generator(IMAGES_GCS_PATH + '/train')
-    id1, f1 = next(g)
-    id2, f2 = next(g)
-    print(id1, f1(14))
-    print(id2, f2(14))
+    create_submission_form("submissions/generated_submission")
