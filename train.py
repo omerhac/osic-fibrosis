@@ -4,7 +4,7 @@ import tensorflow as tf
 import visualize
 
 # Constants
-EPOCHS = 2
+EPOCHS = 20
 BATCH_SIZE = 16
 STEPS_PER_EPOCH = 32994 // BATCH_SIZE
 IMAGE_SIZE = (224, 224)
