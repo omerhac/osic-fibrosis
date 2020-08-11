@@ -72,3 +72,28 @@ def plot_patient_fvc(table, id, order=2):
     title = title[:-2]  # remove end
     plt.title(title)
     plt.show()
+
+
+def plot_training_curves(hist):
+    """Plot training and validation curves"""
+
+    plt.figure()
+
+    # plot loss
+    plt.plot(hist["loss"], color='blue', label='loss')
+    plt.plot(hist["val_loss"], color='orange', label='val_loss')
+    plt.show()
+
+
+def plot_training_metrics(hist, metrics=[]):
+    """Plot learning metrics.
+        Args:
+        metrics--list of metrics to monitor
+    """
+
+    plt.figure()
+    for metric in metrics:
+        plt.plot(hist[metric], label=metric)
+        plt.plot(hist['val_' + metric], label='val_'+metric)
+    plt.show()
+

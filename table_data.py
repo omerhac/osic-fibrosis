@@ -142,12 +142,16 @@ def is_outlier(points, thresh=3.5):
     return modified_z_score > thresh
 
 
-def get_initial_fvc(id):
+def get_initial_fvc(id, for_test=False):
     """Return the week number and FVC value of the first measurement"""
-    table = get_train_table()
-    hist = get_fvc_hist(table, id)
+    if for_test:
+        table = get_test_table()
+        return table[table["Patient"] == id]["Week"], table[table["Patient"] == id]["FVC"]
 
-    return hist.iloc[0,0], hist.iloc[0,1]
+    else:
+        table = get_train_table()
+        hist = get_fvc_hist(table, id)
+        return hist.iloc[0, 0], hist.iloc[0, 1]
 
 
 # TODO: delete this

@@ -11,7 +11,7 @@ IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
 IMAGE_SIZE = (224, 224)
 
 
-def exponent_generator(path):
+def exponent_generator(path, for_test=False):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -19,6 +19,7 @@ def exponent_generator(path):
 
     Args:
         path--path to the directory with the images
+        for_test--flag if the generator is for the test set
     """
 
     image_dataset = image_data.get_images_dataset_by_id(path)
@@ -41,7 +42,7 @@ def exponent_generator(path):
 
         # create exponent
         id = patient.numpy().decode('utf-8')
-        initial_week, initial_fvc = table_data.get_initial_fvc(id)
+        initial_week, initial_fvc = table_data.get_initial_fvc(id, for_test=for_test)
         func = lambda week: initial_fvc * np.exp(-avg_coeff * (week - initial_week))
 
         yield id, func

@@ -1,8 +1,10 @@
 import etl
 import model
+import tensorflow as tf
+import visualize
 
 # Constants
-EPOCHS = 10
+EPOCHS = 20
 BATCH_SIZE = 16
 STEPS_PER_EPOCH = 32994 // BATCH_SIZE
 IMAGE_SIZE = (224, 224)
@@ -22,9 +24,12 @@ def train_model():
     # get model
     network = model.get_model(IMAGE_SIZE)
 
+    # add callbacks
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_mse', mode='auto',
+                                                      restore_best_weights=True, patience=3, verbose=1)
     # train
     history = network.fit(train_dataset, epochs=EPOCHS, steps_per_epoch=STEPS_PER_EPOCH,
-                          batch_size=BATCH_SIZE, validation_data=val_dataset)
+                          batch_size=BATCH_SIZE, validation_data=val_dataset, callbacks=[early_stopping])
 
     # save model
     network.save('model_weights/model')
@@ -33,4 +38,5 @@ def train_model():
 
 
 if __name__ == '__main__':
-    train_model()
+    history = train_model()
+    visualize.plot_training_curves(history)
