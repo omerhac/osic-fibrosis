@@ -8,7 +8,7 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, Ma
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Constants
-IMAGE_SIZE = [512, 512]
+IMAGE_SIZE = [224, 224]
 
 
 def fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment=0.9):
