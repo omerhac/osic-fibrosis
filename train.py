@@ -4,7 +4,7 @@ import tensorflow as tf
 import visualize
 
 # Constants
-EPOCHS = 20
+EPOCHS = 2
 BATCH_SIZE = 16
 STEPS_PER_EPOCH = 32994 // BATCH_SIZE
 IMAGE_SIZE = (224, 224)
@@ -32,7 +32,7 @@ def train_model():
                           batch_size=BATCH_SIZE, validation_data=val_dataset, callbacks=[early_stopping])
 
     # save model
-    network.save('model_weights/model')
+    network.save_weights('model_weights/model_v1.ckpt')
 
     return history.history
 

@@ -4,6 +4,7 @@ import table_data
 import numpy as np
 import visualize
 import pandas as pd
+import model
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
@@ -43,7 +44,8 @@ def exponent_generator(path, for_test=False):
     image_dataset = image_data.get_images_dataset_by_id(path)
 
     # get model
-    network = tf.keras.models.load_model('model_weights/model')
+    network = model.get_model()
+    network.load_weights('model_weights/model_v1.ckpt')
 
     # iterate threw every patient
     for patient, images in image_dataset:
@@ -66,7 +68,7 @@ def exponent_generator(path, for_test=False):
         yield id, exp_func
 
 
-def predict_test(save_path, test_path=IMAGES_GCS_PATH + 'test'):
+def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test'):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
