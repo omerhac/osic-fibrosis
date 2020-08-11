@@ -78,7 +78,8 @@ def predict_test(save_path):
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
 
     # get submission form
-    submission = table_data.get_submission_table()
+    create_submission_form(save_path)
+    submission = pd.read_csv(save_path)
 
     # broadcast 50 Confidence level
     submission["Confidence"] = 50  # TODO: solve how to predict it...
@@ -113,5 +114,4 @@ def create_submission_form(save_path):
 
 
 if __name__ == '__main__':
-    #predict_test('submissions/sub_1.csv')
-    create_submission_form("submissions/generated_submission")
+    predict_test('submissions/sub_1.csv')
