@@ -151,7 +151,7 @@ def get_initial_fvc(id, for_test=False):
     """Return the week number and FVC value of the first measurement"""
     if for_test:
         table = get_test_table()
-        return float(table.loc[table["Patient"] == id].loc[0, "Weeks"]), float(table[table["Patient"] == id].loc[0, "FVC"])
+        return float(table.loc[table["Patient"] == id]["Weeks"]), float(table[table["Patient"] == id]["FVC"])
 
     else:
         table = get_train_table()
@@ -161,5 +161,4 @@ def get_initial_fvc(id, for_test=False):
 
 # TODO: delete this
 if __name__ == "__main__""":
-    week, fvc = get_initial_fvc("ID00423637202312137826377")
-    print(week.dtype)
+    pass
