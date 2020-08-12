@@ -68,7 +68,7 @@ def exponent_generator(path, for_test=False):
         yield id, exp_func
 
 
-def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test'):
+def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', submission_table_path=None):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
@@ -83,7 +83,10 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test'):
 
     # get submission form
     # create_submission_form(save_path, test_path=test_path) # TODO: check this
-    submission = table_data.get_submission_table()
+    if submission_table_path is None:
+        submission = table_data.get_submission_table()
+    else:
+        submission = pd.read_csv(submission_table_path)
 
     # broadcast 50 Confidence level
     submission["Confidence"] = 50  # TODO: solve how to predict it...
