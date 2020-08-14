@@ -85,7 +85,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
 
     # get submission form
     if new_submission_form:
-        create_submission_form(save_path, test_path=test_path) # TODO: check this
+        create_submission_form(save_path, test_path=test_path)
     submission = pd.read_csv(save_path)
 
     # broadcast 50 Confidence level
@@ -122,4 +122,4 @@ def create_submission_form(save_path, test_path=IMAGES_GCS_PATH + '/test'):
 
 
 if __name__ == '__main__':
-    predict_test('submissions/sub_1.csv')
+    predict_test('submissions/sub_2.csv')

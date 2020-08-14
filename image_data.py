@@ -1,7 +1,6 @@
 import tensorflow as tf
 import tests
 import os
-import pydicom
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Just disables the warning, doesn't enable AVX/FMA
