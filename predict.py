@@ -73,6 +73,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', submission_tabl
     Args:
         save_path: where to save predictions
         test_path: path to test images
+        submission_table_path: path to premade submission table
     """
 
     # get generator
@@ -82,11 +83,12 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', submission_tabl
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
 
     # get submission form
-    # create_submission_form(save_path, test_path=test_path) # TODO: check this
-    if submission_table_path is None:
+    create_submission_form(save_path, test_path=test_path) # TODO: check this
+    submission = pd.read_csv(save_path)
+    """if submission_table_path is None:
         submission = table_data.get_submission_table()
     else:
-        submission = pd.read_csv(submission_table_path)
+        submission = pd.read_csv(submission_table_path)"""
 
     # broadcast 50 Confidence level
     submission["Confidence"] = 50  # TODO: solve how to predict it...
@@ -98,7 +100,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', submission_tabl
         submission.loc[index, "FVC"] = exp_dict[id](week)
 
     # save
-    submission.to_csv(save_path)
+    submission.to_csv(save_path, index=False)
 
 
 def create_submission_form(save_path, test_path=IMAGES_GCS_PATH + '/test'):
