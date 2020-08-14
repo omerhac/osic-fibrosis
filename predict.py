@@ -84,7 +84,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
 
     # get submission form
-    if create_submission_form:
+    if new_submission_form:
         create_submission_form(save_path, test_path=test_path) # TODO: check this
     submission = pd.read_csv(save_path)
 
@@ -95,7 +95,10 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
     for index, row in submission.iterrows():
         id, week = row["Patient_Week"].split('_')
         week = float(week)
-        submission.loc[index, "FVC"] = exp_dict[id](week)
+
+        # check whether the key exists
+        if id in exp_dict:
+            submission.loc[index, "FVC"] = exp_dict[id](week)
 
     # save
     submission.to_csv(save_path, index=False)
