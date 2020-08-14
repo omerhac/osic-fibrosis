@@ -23,7 +23,7 @@ def laplace_log_likelihood(y_true, y_pred, theta):
     return metric.sum() / len(y_true)
 
 
-def get_lll_value_exp_function(id, exp_function, theta=300):
+def get_lll_value_exp_function(id, exp_function, theta=200):
     """Return the laplace log likelihood score for a given patient and his exponent function."""
     hist = table_data.get_fvc_hist(table_data.get_train_table(), id)  # get ground truth
 
@@ -44,7 +44,7 @@ def get_lll_value_exp_function(id, exp_function, theta=300):
     return metric
 
 
-def metric_check(n_patients):
+def metric_check(n_patients, inifinite=False):
     """Average n_patients random train patients Laplace Log Likelihood score"""
     scores = []
     exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train')
@@ -55,8 +55,11 @@ def metric_check(n_patients):
         scores.append(score)
 
         # exit rule
-        if i == n_patients - 1:
-            break
+        if inifinite:
+            print(score) # for infinitely printing scores
+        else
+            if i == n_patients - 1:
+                break
 
     return scores.sum() / n_patients
 
