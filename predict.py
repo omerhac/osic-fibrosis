@@ -68,12 +68,13 @@ def exponent_generator(path, for_test=False):
         yield id, exp_func
 
 
-def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', submission_table_path=None):
+def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_form=True):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
         test_path: path to test images
-        submission_table_path: path to premade submission table
+        new_submission_form: flag whether to create the submission form from scratch. Else the form should be present
+        at save path.
     """
 
     # get generator
@@ -83,12 +84,9 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', submission_tabl
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
 
     # get submission form
-    create_submission_form(save_path, test_path=test_path) # TODO: check this
+    if create_submission_form:
+        create_submission_form(save_path, test_path=test_path) # TODO: check this
     submission = pd.read_csv(save_path)
-    """if submission_table_path is None:
-        submission = table_data.get_submission_table()
-    else:
-        submission = pd.read_csv(submission_table_path)"""
 
     # broadcast 50 Confidence level
     submission["Confidence"] = 50  # TODO: solve how to predict it...
