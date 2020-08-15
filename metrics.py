@@ -57,7 +57,7 @@ def metric_check(n_patients, inifinite=False):
         # exit rule
         if inifinite:
             print(score) # for infinitely printing scores
-        else
+        else:
             if i == n_patients - 1:
                 break
 
