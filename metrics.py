@@ -64,6 +64,3 @@ def metric_check(n_patients, inifinite=False):
     return scores.sum() / n_patients
 
 
-g = predict.exponent_generator(IMAGES_GCS_PATH + '/train')
-for id, func in g:
-    print(get_lll_value_exp_function(id, func))
