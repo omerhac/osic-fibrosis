@@ -18,7 +18,6 @@ def plot_patient_exp(id, exp_function=None, ax=None):
 
     # plot fvc
     if ax:
-        ax.figure()
         ax.scatter(hist["Weeks"], hist["FVC"], color='red')
 
     else:
