@@ -43,7 +43,7 @@ def plot_patient_exp(id, exp_function=None, ax=None):
     else:
         sns.scatterplot(weeks, eval_values, color='blue')
         plt.ylim([hist["FVC"].min() - 500, hist["FVC"].max() + 500])  # set y axis lim
-    plt.show()
+        plt.show()
 
 
 def plot_patient_percent(table, id, order=2):
