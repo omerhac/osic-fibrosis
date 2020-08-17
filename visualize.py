@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def plot_patient_exp(id, exp_function=None):
+def plot_patient_exp(id, exp_function=None, ax=None):
     """Plot patient exponential regression
     Args:
         exp_functiion--function describing FVC progression
@@ -17,8 +17,13 @@ def plot_patient_exp(id, exp_function=None):
     k = table_data.get_patient_fvc_exp(table, id)
 
     # plot fvc
-    plt.figure()
-    sns.scatterplot(hist["Weeks"], hist["FVC"], color='red')
+    if ax:
+        ax.figure()
+        ax.scatter(hist["Weeks"], hist["FVC"], color='red')
+
+    else:
+        plt.figure()
+        sns.scatterplot(hist["Weeks"], hist["FVC"], color='red')
 
     # get exponent
     weeks = np.linspace(hist.iloc[0, 0], hist.iloc[-1, 0], 100)
@@ -32,8 +37,13 @@ def plot_patient_exp(id, exp_function=None):
     eval_values = func(weeks)  # center weeks before feeding to exp function
 
     # plot evaluated values
-    sns.scatterplot(weeks, eval_values, color='blue')
-    plt.ylim([hist["FVC"].min() - 500, hist["FVC"].max() + 500]) # set y axis lim
+    if ax:
+        ax.scatter(weeks, eval_values, color='blue')
+        ax.ylim([hist["FVC"].min() - 500, hist["FVC"].max() + 500]) # set y axis lim
+
+    else:
+        sns.scatterplot(weeks, eval_values, color='blue')
+        plt.ylim([hist["FVC"].min() - 500, hist["FVC"].max() + 500])  # set y axis lim
     plt.show()
 
 
