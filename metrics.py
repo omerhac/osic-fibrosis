@@ -51,7 +51,7 @@ def metric_check(exp_gen, n_patients, iifinite=False):
         n_patients-number of patients to average
         infinite-whether to continue printing infinitely
     """
-    
+
     scores = []
 
     if not exp_gen:

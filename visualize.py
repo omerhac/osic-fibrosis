@@ -33,6 +33,7 @@ def plot_patient_exp(id, exp_function=None):
 
     # plot evaluated values
     sns.scatterplot(weeks, eval_values, color='blue')
+    plt.set_ylim([1500, 3000])
     plt.show()
 
 

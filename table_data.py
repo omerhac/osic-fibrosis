@@ -161,4 +161,7 @@ def get_initial_fvc(id, for_test=False):
 
 # TODO: delete this
 if __name__ == "__main__""":
-    pass
+    print(get_train_table()[50:51])
+    visualize.plot_patient_fvc(get_train_table(), "ID00014637202177757139317")
+    print(get_fvc_hist(get_train_table(), "ID00014637202177757139317"))
+    print(is_outlier(get_fvc_hist(get_train_table(), "ID00014637202177757139317").to_numpy(), thresh=2.2))
