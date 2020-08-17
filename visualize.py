@@ -38,7 +38,7 @@ def plot_patient_exp(id, exp_function=None, ax=None):
     # plot evaluated values
     if ax:
         ax.scatter(weeks, eval_values, color='blue')
-        ax.ylim([hist["FVC"].min() - 500, hist["FVC"].max() + 500]) # set y axis lim
+        ax.set_ylim([hist["FVC"].min() - 500, hist["FVC"].max() + 500]) # set y axis lim
 
     else:
         sns.scatterplot(weeks, eval_values, color='blue')
