@@ -115,41 +115,6 @@ def get_exp_fvc_dict():
     return exp_dict
 
 
-def is_outlier(points, thresh=3.5):
-    """
-    Returns a boolean array with True if points are outliers and False
-    otherwise.
-
-    Parameters:
-    -----------
-        points : An numobservations by numdimensions array of observations
-        thresh : The modified z-score to use as a threshold. Observations with
-            a modified z-score (based on the median absolute deviation) greater
-            than this value will be classified as outliers.
-
-    Returns:
-    --------
-        mask : A numobservations-length boolean array.
-
-    References:
-    ----------
-        Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and
-        Handle Outliers", The ASQC Basic References in Quality Control:
-        Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
-    """
-
-    if len(points.shape) == 1:
-        points = points[:, None]
-    median = np.median(points, axis=0)
-    diff = np.sum((points - median)**2, axis=-1)
-    diff = np.sqrt(diff)
-    med_abs_deviation = np.median(diff)
-
-    modified_z_score = 0.6745 * diff / med_abs_deviation
-
-    return modified_z_score > thresh
-
-
 def get_initial_fvc(id, for_test=False):
     """Return the week number and FVC value of the first measurement"""
     if for_test:
@@ -183,7 +148,7 @@ def preprocess_table_for_nn(table):
     ohe_table = pd.concat([table, sex, smoking_status], axis=1).drop(["Sex", "SmokingStatus"], axis=1)
 
     # normalize numeric columns
-    normalize_feature(ohe_table, "Weeks")
+    normalize_feature(ohe_table, "Week")
     normalize_feature(ohe_table, "FVC")
     normalize_feature(ohe_table, "Percent")
     normalize_feature(ohe_table, "Age")
@@ -191,13 +156,10 @@ def preprocess_table_for_nn(table):
     return ohe_table
 
 
-def create_expanded_table(type='train', images_path=IMAGES_GCS_PATH + 'train'):
-    """Create an expanded table dataset with a record for every patient+week couple"""
-    # check type
-    assert type == 'train' or type == 'validation' or type == 'test', "Type should be train / validation / test"
-
+def create_expanded_table(images_path=IMAGES_GCS_PATH + '/train', for_test=False):
+    """Create an expanded table dataset with a record for every patient+week couple. Also predicts FVC for each week."""
     # get raw table data
-    if type == 'test':
+    if for_test:
         data = get_test_table()
     else:
         data = get_train_table()
@@ -205,11 +167,34 @@ def create_expanded_table(type='train', images_path=IMAGES_GCS_PATH + 'train'):
     # get weekly patient form
     weekly_data = predict.create_submission_form(images_path=images_path)
     weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
-    weekly_data["Week"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1])
+    weekly_data["Week"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('uint8')
+
+    # predict weekly fvc
+    exp_gen = predict.exponent_generator(images_path, for_test=for_test)
+    exp_dict = {id: exp_func for id, exp_func in exp_gen}
+    predict.predict_form(exp_dict, weekly_data)
+
+    # merge
+    data = data.drop(["Weeks", "FVC"], axis=1).merge(weekly_data, on="Patient")
+
+    # remove unused features
+    data = data.drop(["Patient_Week", "Confidence"], axis=1)
+
+    return data
+
+
+def create_nn_dataset(image_path=IMAGES_GCS_PATH + '/train', for_test=False):
+    """Create dataset for NN training"""
+
+    # get data
+    data = create_expanded_table(images_path=image_path, for_test=for_test)
+
+    # preprocess data
+    data = preprocess_table_for_nn(data)
+    return data
 
 
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-    t = get_train_table()
-    print(preprocess_table_for_nn(t))
+    print(create_nn_dataset(IMAGES_GCS_PATH + '/test', for_test=True))

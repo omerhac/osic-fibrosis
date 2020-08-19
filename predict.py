@@ -99,6 +99,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
 
 
 def predict_form(exp_dict, form):
+    """Predict FVC on a premade form of patient week couples"""
     for index, row in form.iterrows():
         id, week = row["Patient_Week"].split('_')
         week = float(week)
