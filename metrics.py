@@ -69,7 +69,7 @@ def metric_check(exp_gen, n_patients, infinite=False):
             if i == n_patients - 1:
                 break
 
-    return scores.sum() / n_patients
+    return sum(scores) / n_patients
 
 
 
