@@ -1,5 +1,5 @@
 import etl
-import model
+import models
 import tensorflow as tf
 import visualize
 
@@ -22,7 +22,7 @@ def train_model():
     val_dataset = val_dataset.batch(BATCH_SIZE)
 
     # get model
-    network = model.get_model(IMAGE_SIZE)
+    network = models.get_sqeezenet_model(IMAGE_SIZE)
 
     # add callbacks
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_mse', mode='auto',

@@ -4,7 +4,7 @@ import table_data
 import numpy as np
 import visualize
 import pandas as pd
-import model
+import models
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
@@ -44,7 +44,7 @@ def exponent_generator(path, for_test=False):
     image_dataset = image_data.get_images_dataset_by_id(path)
 
     # get model
-    network = model.get_model()
+    network = models.get_sqeezenet_model()
     network.load_weights('model_weights/model_v1.ckpt')
 
     # iterate threw every patient
@@ -85,28 +85,32 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
 
     # get submission form
     if new_submission_form:
-        create_submission_form(save_path, test_path=test_path)
+        create_submission_form(save_path=save_path, images_path=test_path)
     submission = pd.read_csv(save_path)
 
     # broadcast 50 Confidence level
     submission["Confidence"] = 50  # TODO: solve how to predict it...
 
     # predict FVC
-    for index, row in submission.iterrows():
-        id, week = row["Patient_Week"].split('_')
-        week = float(week)
-
-        # check whether the key exists
-        if id in exp_dict:
-            submission.loc[index, "FVC"] = exp_dict[id](week)
+    predict_form(exp_dict, submission)
 
     # save
     submission.to_csv(save_path, index=False)
 
 
-def create_submission_form(save_path, test_path=IMAGES_GCS_PATH + '/test'):
+def predict_form(exp_dict, form):
+    for index, row in form.iterrows():
+        id, week = row["Patient_Week"].split('_')
+        week = float(week)
+
+        # check whether the key exists
+        if id in exp_dict:
+            form.loc[index, "FVC"] = exp_dict[id](week)
+
+
+def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'):
     """Create a submission form to fill later"""
-    image_dataset = image_data.get_images_dataset_by_id(test_path)
+    image_dataset = image_data.get_images_dataset_by_id(images_path)
 
     # weeks to predict range
     weeks = range(-12, 134)
@@ -118,7 +122,11 @@ def create_submission_form(save_path, test_path=IMAGES_GCS_PATH + '/test'):
         for week in weeks:
             form = form.append({"Patient_Week": id + '_' + str(week), "FVC": 0, "Confidence": 0}, ignore_index=True)
 
-    form.to_csv(save_path, index=False)
+    # save
+    if save_path:
+        form.to_csv(save_path, index=False)
+    else:
+        return form
 
 
 if __name__ == '__main__':

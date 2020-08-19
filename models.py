@@ -4,8 +4,6 @@ import etl
 from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, MaxPooling2D, SeparableConv2D\
     , concatenate, GlobalAveragePooling2D
 
-# Just disables the warning, doesn't enable AVX/FMA
-#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Constants
 IMAGE_SIZE = [224, 224]
@@ -31,8 +29,8 @@ def fire(num_squeeze_filters, num_expand_filters, bnmoment=0.9):
     return lambda x: fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment)
 
 
-def get_model(image_size=IMAGE_SIZE):
-    """Return a model that maps images to polynomial coefficients"""
+def get_sqeezenet_model(image_size=IMAGE_SIZE):
+    """Return a CNN model that maps images to polynomial coefficients. Squeezenet architecture"""
 
     # dimensionality reduction
     x = Input(shape=[*image_size, 3])
@@ -65,6 +63,10 @@ def get_model(image_size=IMAGE_SIZE):
     model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
     return model
+
+
+def get_delta_model():
+    """Return a NN model that maps patient records, FVC prediction and exponent coefficients to delta estimation."""
 
 
 if __name__ == '__main__':

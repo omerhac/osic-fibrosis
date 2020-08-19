@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
 import visualize
+import predict
 
+# images path
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
 
 def get_train_table():
     """Return a dataframe with train records"""
@@ -159,9 +162,54 @@ def get_initial_fvc(id, for_test=False):
         return hist.iloc[0, 0], hist.iloc[0, 1]
 
 
+def normalize_feature(table, feature):
+    """Normalize a numeric feature in pandas DataFrame"""
+    # get stats
+    min = table[feature].min()
+    max = table[feature].max()
+    mean = table[feature].mean()
+
+    # transform
+    table[feature] = (table[feature] - mean) / (max - min)
+
+
+def preprocess_table_for_nn(table):
+    """Prepare table data for NN digestion. One hot encode categorical data."""
+    # one hot encode categorical
+    sex = pd.get_dummies(table["Sex"], prefix='Sex')  # one hot encode sex variable
+    smoking_status = pd.get_dummies(table["SmokingStatus"], prefix="SmokingStatus")  # one hot encode smokingstatus
+
+    # concat
+    ohe_table = pd.concat([table, sex, smoking_status], axis=1).drop(["Sex", "SmokingStatus"], axis=1)
+
+    # normalize numeric columns
+    normalize_feature(ohe_table, "Weeks")
+    normalize_feature(ohe_table, "FVC")
+    normalize_feature(ohe_table, "Percent")
+    normalize_feature(ohe_table, "Age")
+
+    return ohe_table
+
+
+def create_expanded_table(type='train', images_path=IMAGES_GCS_PATH + 'train'):
+    """Create an expanded table dataset with a record for every patient+week couple"""
+    # check type
+    assert type == 'train' or type == 'validation' or type == 'test', "Type should be train / validation / test"
+
+    # get raw table data
+    if type == 'test':
+        data = get_test_table()
+    else:
+        data = get_train_table()
+
+    # get weekly patient form
+    weekly_data = predict.create_submission_form(images_path=images_path)
+    weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
+    weekly_data["Week"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1])
+
+
 # TODO: delete this
 if __name__ == "__main__""":
-    print(get_train_table()[50:51])
-    visualize.plot_patient_fvc(get_train_table(), "ID00014637202177757139317")
-    print(get_fvc_hist(get_train_table(), "ID00014637202177757139317"))
-    print(is_outlier(get_fvc_hist(get_train_table(), "ID00014637202177757139317").to_numpy(), thresh=2.2))
+    pd.set_option('display.max_columns', None)
+    t = get_train_table()
+    print(preprocess_table_for_nn(t))

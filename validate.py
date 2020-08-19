@@ -1,4 +1,4 @@
-import model
+import models
 import image_data
 import tensorflow as tf
 
