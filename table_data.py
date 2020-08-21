@@ -148,8 +148,8 @@ def preprocess_table_for_nn(table):
     ohe_table = pd.concat([table, sex, smoking_status], axis=1).drop(["Sex", "SmokingStatus"], axis=1)
 
     # normalize numeric columns
-    normalize_feature(ohe_table, "Week")
-    normalize_feature(ohe_table, "FVC")
+    # normalize_feature(ohe_table, "Week")
+    # normalize_feature(ohe_table, "FVC")
     normalize_feature(ohe_table, "Percent")
     normalize_feature(ohe_table, "Age")
 
@@ -167,7 +167,7 @@ def create_expanded_table(images_path=IMAGES_GCS_PATH + '/train', for_test=False
     # get weekly patient form
     weekly_data = predict.create_submission_form(images_path=images_path)
     weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
-    weekly_data["Week"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('uint8')
+    weekly_data["Week"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('int8')
 
     # predict weekly fvc
     exp_gen = predict.exponent_generator(images_path, for_test=for_test)
@@ -183,7 +183,7 @@ def create_expanded_table(images_path=IMAGES_GCS_PATH + '/train', for_test=False
     return data
 
 
-def create_nn_dataset(image_path=IMAGES_GCS_PATH + '/train', for_test=False):
+def create_nn_dataset(image_path=IMAGES_GCS_PATH + '/train', for_test=False, save_path=None):
     """Create dataset for NN training"""
 
     # get data
@@ -191,10 +191,52 @@ def create_nn_dataset(image_path=IMAGES_GCS_PATH + '/train', for_test=False):
 
     # preprocess data
     data = preprocess_table_for_nn(data)
-    return data
+
+    if save_path:
+        data.to_csv(save_path)
+    else:
+        return data
+
+
+def get_theta_labels(table, save_path=None):
+    """Return ground truth theta labels.
+    Compute the optimal theta by |GT_FVC - pred_FVC| if GT FVC is available. Else default to 150
+    """
+
+    theta = pd.DataFrame([])  # create new dataframe
+    train_table = get_train_table()
+
+    # iterate threw all of the train records
+    for index, row in table.iterrows():
+        patient = row["Patient"]
+        week = row["Week"]
+
+        # get prediction FVC
+        pred_fvc = float(table.loc[((table["Patient"] == patient) & (table["Week"] == week)), "FVC"])
+        # check whether a record exists in ground truth
+        if patient_week_exists(patient, week):
+            # get GT FVC
+            gt_fvc = float(train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week), "FVC"])
+            theta = theta.append([np.abs(gt_fvc - pred_fvc)])
+
+        # default to 150
+        else:
+            theta = theta.append([150])
+
+    if save_path:
+        theta.to_csv(save_path)
+    else:
+        return theta
+
+
+def patient_week_exists(patient, week):
+    """Check of a patient week couple exists in train records, return True if it is and False otherwise"""
+    train_table = get_train_table()
+    return ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any()
 
 
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-    print(create_nn_dataset(IMAGES_GCS_PATH + '/test', for_test=True))
+    t = create_nn_dataset(IMAGES_GCS_PATH + '/test', for_test=True)
+    get_theta_labels(t, save_path='theta_data/theta.csv')
