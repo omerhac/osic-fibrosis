@@ -92,7 +92,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
     submission = pd.read_csv(save_path)
 
     # broadcast 50 Confidence level
-    submission["Confidence"] = 50  # TODO: solve how to predict it...
+    submission["Confidence"] = 200  # TODO: solve how to predict it...
 
     # predict FVC
     predict_form(exp_dict, submission)
