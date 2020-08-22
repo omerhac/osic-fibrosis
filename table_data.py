@@ -6,6 +6,7 @@ import predict
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
 
+
 def get_train_table():
     """Return a dataframe with train records"""
     return pd.read_csv('train.csv')
@@ -216,7 +217,8 @@ def get_theta_labels(table, save_path=None):
         # check whether a record exists in ground truth
         if patient_week_exists(patient, week):
             # get GT FVC
-            gt_fvc = float(train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week), "FVC"])
+            gt_fvc = train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week), "FVC"].iloc[0]
+            gt_fvc = float(gt_fvc)
             theta = theta.append([np.abs(gt_fvc - pred_fvc)])
 
         # default to 150
@@ -240,3 +242,4 @@ if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
     t = create_nn_dataset(IMAGES_GCS_PATH + '/test', for_test=True)
     get_theta_labels(t, save_path='theta_data/theta.csv')
+
