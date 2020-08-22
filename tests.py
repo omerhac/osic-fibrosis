@@ -6,7 +6,7 @@ import etl
 import tf_record_writer
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # images size
 IMAGE_SIZE = [512, 512]

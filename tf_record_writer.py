@@ -11,10 +11,10 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cloud/gcloud_key.json"  # gcs au
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # GCS tfrecords path
-TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp'
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp-norm'
 
 # images size
 IMAGE_SIZE = [512, 512]
@@ -129,4 +129,4 @@ if __name__ == '__main__':
     write_tfrecords(type='train')
     write_tfrecords(type='validation')
     write_tfrecords(type='test')
-    
+

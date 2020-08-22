@@ -7,7 +7,7 @@ AUTO = tf.data.experimental.AUTOTUNE
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # images size
 IMAGE_SIZE = [224, 224]

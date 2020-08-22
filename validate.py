@@ -3,7 +3,7 @@ import image_data
 import tensorflow as tf
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # image size
 IMAGE_SIZE = (224, 224)
