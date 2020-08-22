@@ -116,6 +116,19 @@ def get_exp_fvc_dict():
     return exp_dict
 
 
+def get_exp_function_dict():
+    """Create ground truth exponent functions dict for train records"""
+    exp_dict = get_exp_fvc_dict()
+
+    # create exponent functiosn dict
+    func_dict = {}
+    for id in exp_dict:
+        i_week, i_fvc = get_initial_fvc(id)
+        func_dict[id] = predict.ExpFunc(i_fvc, exp_dict[id], i_week)
+
+    return func_dict
+
+
 def get_initial_fvc(id, for_test=False):
     """Return the week number and FVC value of the first measurement"""
     if for_test:
@@ -204,8 +217,9 @@ def get_theta_labels(table, save_path=None):
     Compute the optimal theta by |GT_FVC - pred_FVC| if GT FVC is available. Else default to 150
     """
 
-    theta = pd.DataFrame([])  # create new dataframe
+    theta = []  # create new list
     train_table = get_train_table()
+    exp_dict = get_exp_function_dict()  # get k dict
 
     # iterate threw all of the train records
     for index, row in table.iterrows():
@@ -219,14 +233,16 @@ def get_theta_labels(table, save_path=None):
             # get GT FVC
             gt_fvc = train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week), "FVC"].iloc[0]
             gt_fvc = float(gt_fvc)
-            theta = theta.append([np.abs(gt_fvc - pred_fvc)])
+            theta.append([np.abs(gt_fvc - pred_fvc)])
 
         # default to 150
         else:
-            theta = theta.append([150])
+            exp_func = exp_dict[patient]  # get ground truth exponent function
+            theta.append([np.abs(exp_func(week) - pred_fvc)])
 
+    theta = pd.DataFrame(theta)
     if save_path:
-        theta.to_csv(save_path)
+        theta.to_csv(save_path, index=False)
     else:
         return theta
 
@@ -240,6 +256,8 @@ def patient_week_exists(patient, week):
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-    t = create_nn_dataset(IMAGES_GCS_PATH + '/test', for_test=True)
+    t = create_expanded_table(IMAGES_GCS_PATH + '/test', for_test=True)
     get_theta_labels(t, save_path='theta_data/theta.csv')
+
+
 

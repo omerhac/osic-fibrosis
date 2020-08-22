@@ -131,4 +131,4 @@ def read_image(im_path, decode=True):
 
 # TODO: delete this
 if __name__ == "__main__":
-    tests.test_images_dataset()
+    pass
