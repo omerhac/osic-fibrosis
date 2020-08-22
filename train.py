@@ -13,8 +13,8 @@ IMAGE_SIZE = (224, 224)
 def train_model():
     """Train the model. Save weights to model_weights. Return history dict"""
     # get datasets
-    train_dataset = etl.get_tfrecord_dataset(image_size=IMAGE_SIZE)
-    val_dataset = etl.get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=True)
+    train_dataset = etl.get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train')
+    val_dataset = etl.get_tfrecord_dataset(image_size=IMAGE_SIZE, type='validation')
 
     # batch and repeat dataset
     train_dataset = train_dataset.repeat()
@@ -32,11 +32,11 @@ def train_model():
                           batch_size=BATCH_SIZE, validation_data=val_dataset, callbacks=[early_stopping])
 
     # save model
-    network.save_weights('model_weights/model_v1.ckpt')
+    network.save_weights('model_weights/model_v2.ckpt')
 
     return history.history
 
 
 if __name__ == '__main__':
-    history = train_model()
-    visualize.plot_training_curves(history)
+    hist = train_model()
+    visualize.plot_training_curves(hist)

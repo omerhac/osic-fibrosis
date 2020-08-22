@@ -30,7 +30,7 @@ class ExpFunc:
         return self._initial_value * np.exp(-self._exponential_coefficient * (time - self._shift))
 
 
-def exponent_generator(path, for_test=False):
+def exponent_generator(path, for_test=False, model_path='model_weights/model_v2.ckpt'):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -39,13 +39,14 @@ def exponent_generator(path, for_test=False):
     Args:
         path--path to the directory with the images
         for_test--flag if the generator is for the test set
+        model_path--path to model_weights
     """
 
     image_dataset = image_data.get_images_dataset_by_id(path)
 
     # get model
     network = models.get_sqeezenet_model()
-    network.load_weights('model_weights/model_v1.ckpt')
+    network.load_weights(model_path)
 
     # iterate threw every patient
     for patient, images in image_dataset:
@@ -68,17 +69,19 @@ def exponent_generator(path, for_test=False):
         yield id, exp_func
 
 
-def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_form=True):
+def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_form=True,
+                 model_path='model_weights/model_v2.ckpt'):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
         test_path: path to test images
         new_submission_form: flag whether to create the submission form from scratch. Else the form should be present
         at save path.
+        model_path: path to model weights
     """
 
     # get generator
-    exp_gen = exponent_generator(test_path, for_test=True)
+    exp_gen = exponent_generator(test_path, for_test=True, model_path=model_path)
 
     # gather patient exponents
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function

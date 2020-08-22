@@ -13,7 +13,7 @@ IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 IMAGE_SIZE = [512, 512]
 
 # GCS tfrecords path
-TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp'
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp-norm'
 
 
 def create_train_dataset():
@@ -84,7 +84,7 @@ def create_test_dataset():
         del test_ids
 
 
-def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
+def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     """Read from TFRecords. For optimal performance, read from multiple
     TFRecord files at once and set the option experimental_deterministic = False
     to allow order-altering optimizations.
@@ -95,11 +95,8 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
     option_no_order = tf.data.Options()
     option_no_order.experimental_deterministic = False
 
-    # check whether for validation
-    if validation:
-        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/validation/*.tfrec")
-    else:
-        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
+    # get files according to type
+    filenames = tf.io.gfile.glob(TF_RECORDS_PATH + '/' + type + '/*.tfrec')
 
     train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
     train_dataset = train_dataset.with_options(option_no_order)
