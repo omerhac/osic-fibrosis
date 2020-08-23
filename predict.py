@@ -70,7 +70,7 @@ def exponent_generator(path, for_test=False, model_path='model_weights/model_v2.
 
 
 def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_form=True,
-                 model_path='model_weights/model_v2.ckpt'):
+                 model_path='model_weights/model_v2.ckpt', exp_gen=None):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
@@ -81,7 +81,8 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
     """
 
     # get generator
-    exp_gen = exponent_generator(test_path, for_test=True, model_path=model_path)
+    if not exp_gen:
+        exp_gen = exponent_generator(test_path, for_test=True, model_path=model_path)
 
     # gather patient exponents
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
