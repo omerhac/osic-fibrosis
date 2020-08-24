@@ -1,6 +1,5 @@
-import numpy as np
+m
 import pandas as pd
-import tensorflow as tf
 import image_data
 import os
 import pydicom
@@ -42,7 +41,7 @@ def test_generator(test_dir):
 
 
 def get_initial_fvc(id, test_table_path):
-    """Return the week number and FVC value of the first measurement"""
+    """Return the week number and FVC value of the first measurement. Test table csv at test_table_path"""
     table = pd.read_csv(test_table_path)
     return float(table.loc[table["Patient"] == id]["Weeks"]), float(table[table["Patient"] == id]["FVC"])
 

@@ -77,7 +77,7 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
         test_path: path to test images
         new_submission_form: flag whether to create the submission form from scratch. Else the form should be present
         at save path.
-        model_path: path to model weights
+        model_path: path to model weights -- only needed if exponent generator is not provided
         exp_gen: a generator for exponent function, this function will create one if its not provided
     """
 
