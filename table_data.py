@@ -129,10 +129,10 @@ def get_exp_function_dict():
     return func_dict
 
 
-def get_initial_fvc(id, test_table_path=None):
+def get_initial_fvc(id, for_test=False):
     """Return the week number and FVC value of the first measurement"""
-    if test_table_path:
-        table = pd.read_csv(test_table_path)
+    if for_test:
+        table = get_test_table()
         return float(table.loc[table["Patient"] == id]["Weeks"]), float(table[table["Patient"] == id]["FVC"])
 
     else:
