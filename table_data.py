@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import visualize
 import predict
+import image_data
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 
 def get_train_table():
@@ -149,7 +150,7 @@ def normalize_feature(table, feature):
     mean = table[feature].mean()
 
     # transform
-    table[feature] = (table[feature] - mean) / (max - min)
+    table[feature] = (table[feature] - min) / (max - min)
 
 
 def preprocess_table_for_nn(table):
@@ -162,89 +163,13 @@ def preprocess_table_for_nn(table):
     ohe_table = pd.concat([table, sex, smoking_status], axis=1).drop(["Sex", "SmokingStatus"], axis=1)
 
     # normalize numeric columns
-    # normalize_feature(ohe_table, "Week")
-    # normalize_feature(ohe_table, "FVC")
+    normalize_feature(ohe_table, "Weeks")
+    normalize_feature(ohe_table, "FVC")
     normalize_feature(ohe_table, "Percent")
     normalize_feature(ohe_table, "Age")
 
     return ohe_table
 
-
-def create_expanded_table(images_path=IMAGES_GCS_PATH + '/train', for_test=False):
-    """Create an expanded table dataset with a record for every patient+week couple. Also predicts FVC for each week."""
-    # get raw table data
-    if for_test:
-        data = get_test_table()
-    else:
-        data = get_train_table()
-
-    # get weekly patient form
-    weekly_data = predict.create_submission_form(images_path=images_path)
-    weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
-    weekly_data["Week"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('int8')
-
-    # predict weekly fvc
-    exp_gen = predict.exponent_generator(images_path, for_test=for_test)
-    exp_dict = {id: exp_func for id, exp_func in exp_gen}
-    predict.predict_form(exp_dict, weekly_data)
-
-    # merge
-    data = data.drop(["Weeks", "FVC"], axis=1).merge(weekly_data, on="Patient")
-
-    # remove unused features
-    data = data.drop(["Patient_Week", "Confidence"], axis=1)
-
-    return data
-
-
-def create_nn_dataset(image_path=IMAGES_GCS_PATH + '/train', for_test=False, save_path=None):
-    """Create dataset for NN training"""
-
-    # get data
-    data = create_expanded_table(images_path=image_path, for_test=for_test)
-
-    # preprocess data
-    data = preprocess_table_for_nn(data)
-
-    if save_path:
-        data.to_csv(save_path)
-    else:
-        return data
-
-
-def get_theta_labels(table, save_path=None):
-    """Return ground truth theta labels.
-    Compute the optimal theta by |GT_FVC - pred_FVC| if GT FVC is available. Else default to 150
-    """
-
-    theta = []  # create new list
-    train_table = get_train_table()
-    exp_dict = get_exp_function_dict()  # get k dict
-
-    # iterate threw all of the train records
-    for index, row in table.iterrows():
-        patient = row["Patient"]
-        week = row["Week"]
-
-        # get prediction FVC
-        pred_fvc = float(table.loc[((table["Patient"] == patient) & (table["Week"] == week)), "FVC"])
-        # check whether a record exists in ground truth
-        if patient_week_exists(patient, week):
-            # get GT FVC
-            gt_fvc = train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week), "FVC"].iloc[0]
-            gt_fvc = float(gt_fvc)
-            theta.append([np.abs(gt_fvc - pred_fvc)])
-
-        # default to 150
-        else:
-            exp_func = exp_dict[patient]  # get ground truth exponent function
-            theta.append([np.abs(exp_func(week) - pred_fvc)])
-
-    theta = pd.DataFrame(theta)
-    if save_path:
-        theta.to_csv(save_path, index=False)
-    else:
-        return theta
 
 
 def patient_week_exists(patient, week):
@@ -253,11 +178,66 @@ def patient_week_exists(patient, week):
     return ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any()
 
 
+def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
+    """Create test table for NN"""
+    # get standard form
+    weekly_data = predict.create_submission_form(images_path=test_images_path)
+    weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
+    weekly_data["Weeks"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('float32')
+
+    # predict weekly fvc
+    exp_gen = predict.exponent_generator(test_images_path, for_test=True)
+    exp_dict = {id: exp_func for id, exp_func in exp_gen}
+    predict.predict_form(exp_dict, weekly_data)
+
+    # merge
+    data = test_table.drop(["FVC", "Weeks"], axis=1).merge(weekly_data, on="Patient")
+
+    # remove unused features
+    data = data.drop(["Patient_Week", "Confidence"], axis=1)
+
+    return data
+
+
+def create_nn_train():
+    """Create NN train table"""
+    data = get_train_table()
+
+    # get predictions on train set
+    data["GT_FVC"] = data["FVC"]
+    exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train', for_test=False)
+    exp_dict = {id: exp_func for id, exp_func in exp_gen}
+    predict.predict_form(exp_dict, data, submission=False)
+
+    # get optimal theta
+    data["Theta"] = np.abs(data["GT_FVC"] - data["FVC"])
+
+    return data
+
+
+def get_train_val_split():
+    """Return a list of ids of train patients and a list of ids of validation patients"""
+    train_ids = []
+    val_ids = []
+
+    # get image dataset of train patients
+    train_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/train')
+    val_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/validation')
+
+    for patient, images in train_image_dataset:
+        train_ids.append(patient.numpy().decode('utf-8'))
+
+    for patient, images in val_image_dataset:
+        val_ids.append(patient.numpy().decode('utf-8'))
+
+    return train_ids, val_ids
+
+
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-    t = create_expanded_table(IMAGES_GCS_PATH + '/test', for_test=True)
-    get_theta_labels(t, save_path='theta_data/theta.csv')
+    create_nn_train().to_csv('dd.csv')
+
 
 
 

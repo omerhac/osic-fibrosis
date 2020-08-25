@@ -28,7 +28,7 @@ def patient_image_generator(patient_path, image_size=IMAGE_SIZE):
     # generate images
     for image_path in image_paths:
         image = get_jpeg_image(image_path)
-        resized_image = image_data.resize_and_crop_image(image).numpy().astype('uint8')
+        resized_image = image_data.resize_and_crop_image(image).numpy().astype('uint8')  # TODO: every image preprocessing step should come here to
         yield resized_image
 
 

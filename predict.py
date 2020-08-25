@@ -7,7 +7,7 @@ import pandas as pd
 import models
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # image size
 IMAGE_SIZE = (224, 224)
@@ -103,10 +103,23 @@ def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_
     submission.to_csv(save_path, index=False)
 
 
-def predict_form(exp_dict, form):
-    """Predict FVC on a premade form of patient week couples"""
+def predict_form(exp_dict, form, submission=True):
+    """Predict FVC on a premade form of patient week couples.
+    Args:
+        exp_dict: dictionary with mapping id->exponent function
+        form: pd table to predict
+        submission: flag whether its a submission type from (has Patient_Week column)
+    """
+
     for index, row in form.iterrows():
-        id, week = row["Patient_Week"].split('_')
+
+        # check whether its a submission type form
+        if submission:
+            id, week = row["Patient_Week"].split('_')
+
+        else:
+            id, week = row["Patient"], row["Weeks"]
+
         week = float(week)
 
         # check whether the key exists
