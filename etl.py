@@ -4,6 +4,9 @@ import tensorflow as tf
 import numpy as np
 import tf_record_writer
 import tests
+import predict
+from itertools import chain
+
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
@@ -109,6 +112,56 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     return train_dataset
 
 
+def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
+    """Create NN train table for finding optimal theta"""
+    data = table_data.get_train_table()
+
+    # remove patient with corrupted images
+    data = data[data["Patient"] != 'ID00011637202177653955184']
+
+    # get predictions on train and val set
+    data["GT_FVC"] = data["FVC"]
+    train_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train', model_path=model_path,
+                                               for_test=False)  # train gen
+    val_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation', model_path=model_path,
+                                             for_test=False)  # validation gen
+
+    exp_dict = {id: exp_func for id, exp_func in chain(train_exp_gen, val_exp_gen)}  # get exponential functions dict
+
+    # predict
+    predict.predict_form(exp_dict, data, submission=False)
+
+    # get optimal theta
+    data["Theta"] = np.abs(data["GT_FVC"] - data["FVC"])
+
+    # get exponent coeffs
+    for index, row in data.iterrows():
+        coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
+        data.loc[index, "Coeff"] = coeff
+
+    # normalize
+
+    return data.drop(["GT_FVC"], axis=1)  # to avoid target leakage
+
+
+def get_train_val_split():
+    """Return a list of ids of train patients and a list of ids of validation patients"""
+    train_ids = []
+    val_ids = []
+
+    # get image dataset of train patients
+    train_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/train')
+    val_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/validation')
+
+    for patient, images in train_image_dataset:
+        train_ids.append(patient.numpy().decode('utf-8'))
+
+    for patient, images in val_image_dataset:
+        val_ids.append(patient.numpy().decode('utf-8'))
+
+    return train_ids, val_ids
+
+
 if __name__ == "__main__":
-    tests.test_tfrecords_dataset()
+    create_nn_train().to_csv('theta_data/train.csv')
 

@@ -171,7 +171,6 @@ def preprocess_table_for_nn(table):
     return ohe_table
 
 
-
 def patient_week_exists(patient, week):
     """Check of a patient week couple exists in train records, return True if it is and False otherwise"""
     train_table = get_train_table()
@@ -199,44 +198,18 @@ def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
     return data
 
 
-def create_nn_train():
-    """Create NN train table"""
-    data = get_train_table()
-
-    # get predictions on train set
-    data["GT_FVC"] = data["FVC"]
-    exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train', for_test=False)
-    exp_dict = {id: exp_func for id, exp_func in exp_gen}
-    predict.predict_form(exp_dict, data, submission=False)
-
-    # get optimal theta
-    data["Theta"] = np.abs(data["GT_FVC"] - data["FVC"])
-
-    return data
-
-
-def get_train_val_split():
-    """Return a list of ids of train patients and a list of ids of validation patients"""
-    train_ids = []
-    val_ids = []
-
-    # get image dataset of train patients
-    train_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/train')
-    val_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/validation')
-
-    for patient, images in train_image_dataset:
-        train_ids.append(patient.numpy().decode('utf-8'))
-
-    for patient, images in val_image_dataset:
-        val_ids.append(patient.numpy().decode('utf-8'))
-
-    return train_ids, val_ids
-
-
 # TODO: delete this
 if __name__ == "__main__""":
+    import glob
+    import os
     pd.set_option('display.max_columns', None)
-    create_nn_train().to_csv('dd.csv')
+    t = get_train_table()
+    a = glob.glob("/Users/nurithofesh/Desktop/omer/osic-pulmonary-fibrosis-progression/images-norm/*/*")
+    a = set([os.path.basename(path) for path in a])
+    print(a)
+    b = set(t["Patient"].values)
+    print(b)
+    print(b-a)
 
 
 

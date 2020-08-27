@@ -29,8 +29,12 @@ class ExpFunc:
     def __call__(self, time):
         return self._initial_value * np.exp(-self._exponential_coefficient * (time - self._shift))
 
+    def get_coeff(self):
+        """Return the exponential coefficient of the function"""
+        return self._exponential_coefficient
 
-def exponent_generator(path, for_test=False, model_path='model_weights/model_v2.ckpt'):
+
+def exponent_generator(path, for_test=False, model_path='models_weights/model_v2.ckpt'):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -39,7 +43,7 @@ def exponent_generator(path, for_test=False, model_path='model_weights/model_v2.
     Args:
         path--path to the directory with the images
         for_test--flag if the generator is for the test set
-        model_path--path to model_weights
+        model_path--path to models_weights
     """
 
     image_dataset = image_data.get_images_dataset_by_id(path)
@@ -70,7 +74,7 @@ def exponent_generator(path, for_test=False, model_path='model_weights/model_v2.
 
 
 def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_form=True,
-                 model_path='model_weights/model_v2.ckpt', exp_gen=None):
+                 model_path='models_weights/cnn_model/model_v2.ckpt', exp_gen=None):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions

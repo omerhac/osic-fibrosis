@@ -65,8 +65,23 @@ def get_sqeezenet_model(image_size=IMAGE_SIZE):
     return model
 
 
-def get_delta_model():
-    """Return a NN model that maps patient records, FVC prediction and exponent coefficients to delta estimation."""
+def get_theta_model(input_shape):
+    """Return a NN model that maps patient records, FVC prediction and exponent coefficients to theta estimation."""
+    inp = Input(shape=input_shape)
+
+    # dense layers
+    d1 = Dense(100, activation='relu')(inp)
+    d2 = Dense(100, activation='relu')(d1)
+
+    # output
+    out = Dense(1, activation='linear')
+
+    # compile
+    model = tf.keras.Model(inp, out)
+    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.1, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
+                  loss='mse')
+
+    return model
 
 
 if __name__ == '__main__':

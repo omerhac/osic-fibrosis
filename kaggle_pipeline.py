@@ -1,8 +1,6 @@
-m
 import pandas as pd
 import image_data
 import os
-import pydicom
 import glob
 import matplotlib.pyplot as plt
 import models
@@ -46,7 +44,7 @@ def get_initial_fvc(id, test_table_path):
     return float(table.loc[table["Patient"] == id]["Weeks"]), float(table[table["Patient"] == id]["FVC"])
 
 
-def exponent_generator(path, model_path='model_weights/model_v2.ckpt', test_table_path='test.csv'):
+def exponent_generator(path, model_path='models_weights/model_v2.ckpt', test_table_path='test.csv'):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -55,7 +53,7 @@ def exponent_generator(path, model_path='model_weights/model_v2.ckpt', test_tabl
     Args:
         path--path to the directory with the images
         for_test--flag if the generator is for the test set
-        model_path--path to model_weights
+        model_path--path to models_weights
     """
 
     image_dataset = test_generator(path)
