@@ -2,6 +2,7 @@ import etl
 import models
 import tensorflow as tf
 import visualize
+import pandas as pd
 
 # CNN Constants
 CNN_EPOCHS = 20
@@ -45,10 +46,10 @@ def train_cnn_model(save_path):
 def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt'):
     """Train the theta predicting model. Save weights to models_weights/theta_model. Return history dict"""
     # get datasets
-    dataset = etl.create_nn_train(model_path=cnn_model_path)
+    dataset = pd.read_csv('theta_data/pp_train.csv')#etl.create_nn_train(model_path=cnn_model_path)
     train_ids, val_ids = etl.get_train_val_split()
     train_dataset = dataset.loc[dataset["Patient"].isin(train_ids)]  # get train rows
-    val_dataset = dataset.loc(dataset["Patient"].isin(val_ids))  # get validation rows
+    val_dataset = dataset.loc[dataset["Patient"].isin(val_ids)]  # get validation rows
 
     # split target
     train_y = train_dataset["Theta"]
@@ -74,5 +75,6 @@ def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_
 
 
 if __name__ == '__main__':
-    hist = train_cnn_model()
+    # hist = train_cnn_model()
+    hist = train_theta_model('models_weights/theta_model/theta_model_v1')
     visualize.plot_training_curves(hist)

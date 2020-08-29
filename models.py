@@ -74,7 +74,7 @@ def get_theta_model(input_shape):
     d2 = Dense(100, activation='relu')(d1)
 
     # output
-    out = Dense(1, activation='linear')
+    out = Dense(1, activation='linear')(d2)
 
     # compile
     model = tf.keras.Model(inp, out)

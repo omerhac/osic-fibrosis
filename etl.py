@@ -163,5 +163,5 @@ def get_train_val_split():
 
 
 if __name__ == "__main__":
-    create_nn_train().to_csv('theta_data/train.csv')
+    pass
 
