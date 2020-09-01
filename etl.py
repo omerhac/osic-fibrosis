@@ -129,13 +129,10 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
     exp_dict = {id: exp_func for id, exp_func in chain(train_exp_gen, val_exp_gen)}  # get exponential functions dict
 
     # predict
-    predict.predict_form(exp_dict, data, submission=False)
+    predict.predict_form(exp_dict, data, submission=False)  # this sets the table FVC values to CNN predictions
 
     # add base FVC and week column
     data = table_data.get_initials(data)
-
-    # get optimal theta
-    data["Theta"] = np.abs(data["GT_FVC"] - data["FVC"])
 
     # get exponent coeffs
     for index, row in data.iterrows():
