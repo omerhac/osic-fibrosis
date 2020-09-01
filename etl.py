@@ -145,7 +145,7 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
     # normalize
     data = table_data.preprocess_table_for_nn(data)
 
-    return data.drop(["GT_FVC"], axis=1)  # to avoid target leakage
+    return data
 
 
 def get_train_val_split():
@@ -168,5 +168,5 @@ def get_train_val_split():
 
 if __name__ == "__main__":
     train_table = create_nn_train()
-    train_table.to_csv('theta_data/pp_train')
+    train_table.to_csv('theta_data/pp_train.csv', index=False)
 
