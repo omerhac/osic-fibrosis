@@ -7,6 +7,7 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, Ma
 
 # Constants
 IMAGE_SIZE = [224, 224]
+_lambda = 0.8
 
 
 def fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment=0.9):
@@ -119,21 +120,25 @@ def mloss(_lambda):
     return loss
 
 
-def get_theta_model(input_shape):
-    """Return a NN model that maps patient records, FVC prediction and exponent coefficients to theta estimation."""
+def get_qreg_model(input_shape):
+    """Return a NN model that maps patient records, CNN FVC prediction and exponent coefficients to quantile FVC
+     prediction"""
+
     inp = Input(shape=input_shape)
 
     # dense layers
     d1 = Dense(128, activation='relu')(inp)
     d2 = Dense(128, activation='relu')(d1)
 
-    # output
-    out = Dense(1, activation='linear')(d2)
+    # quantile predictions
+    pred1 = Dense(3, activation='relu')(d2)
+    pred2 = Dense(3, activation='linear')(d2)  # adjusting predictions
+    qunatiles = tf.keras.layers.Lambda(lambda x: x[0] + tf.cumsum(x[1], axis=1))([pred1, pred2])
 
     # compile
-    model = tf.keras.Model(inp, out)
+    model = tf.keras.Model(inp, qunatiles)
     model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.1, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
-                  loss='mse')
+                  loss=mloss(_lambda))
 
     return model
 
