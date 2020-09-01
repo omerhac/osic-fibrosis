@@ -185,6 +185,11 @@ def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
     # get norm weeks column
     data["Norm_Week"] = data["Weeks"] - data["Initial_Week"]
 
+    # get exponent coeffs
+    for index, row in data.iterrows():
+        coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
+        data.loc[index, "Coeff"] = coeff
+
     # remove unused features
     data = data.drop(["Patient_Week", "Confidence"], axis=1)
 
