@@ -70,8 +70,8 @@ def get_theta_model(input_shape):
     inp = Input(shape=input_shape)
 
     # dense layers
-    d1 = Dense(100, activation='relu')(inp)
-    d2 = Dense(100, activation='relu')(d1)
+    d1 = Dense(128, activation='relu')(inp)
+    d2 = Dense(128, activation='relu')(d1)
 
     # output
     out = Dense(1, activation='linear')(d2)

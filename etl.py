@@ -167,5 +167,6 @@ def get_train_val_split():
 
 
 if __name__ == "__main__":
-    pass
+    train_table = create_nn_train()
+    train_table.to_csv('theta_data/pp_train')
 

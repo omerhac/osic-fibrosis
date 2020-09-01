@@ -13,7 +13,7 @@ CNN_IMAGE_SIZE = (224, 224)
 
 # Theta constants
 THETA_EPOCHS = 1500
-THETA_BATCH_SIZE = 128
+THETA_BATCH_SIZE = 256
 THETA_STEPS_PER_EPOCH = 32994 // CNN_BATCH_SIZE
 
 
@@ -44,6 +44,39 @@ def train_cnn_model(save_path):
     return history.history
 
 
+def get_lr_callback(batch_size=64, plot=False, epochs=50):
+    """Returns a lr_scheduler callback which is used for training.
+    Credit to 'from coffee import *' from kaggle at https://www.kaggle.com/chrisden'
+    """
+    lr_start = 0.00001
+    lr_max = 0.00001 * batch_size  # higher batch size --> higher lr
+    lr_min = 0.000001
+    # 30% of all epochs are used for ramping up the LR and then declining starts
+    lr_ramp_ep = epochs * 0.3
+    lr_sus_ep = 0
+    lr_decay = 0.991
+
+    def lr_scheduler(epoch):
+        if epoch < lr_ramp_ep:
+            lr = (lr_max - lr_start) / lr_ramp_ep * epoch + lr_start
+
+        elif epoch < lr_ramp_ep + lr_sus_ep:
+            lr = lr_max
+
+        else:
+            lr = (lr_max - lr_min) * lr_decay ** (epoch - lr_ramp_ep - lr_sus_ep) + lr_min
+
+        return lr
+
+    if not plot:
+        # get the Keras-required callback with our LR for training
+        lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler, verbose=False)
+        return lr_callback
+
+    else:
+        return lr_scheduler
+
+
 def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt'):
     """Train the theta predicting model. Save weights to models_weights/theta_model. Return history dict"""
     # get datasets
@@ -69,10 +102,11 @@ def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_
     # add callbacks
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', mode='auto',
                                                       restore_best_weights=True, patience=3, verbose=1)
+    lr_schedule = get_lr_callback(batch_size=THETA_BATCH_SIZE, epochs=THETA_EPOCHS, plot=False)
 
     # train
     history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
-                              validation_data=(val_x, val_y), shuffle=True, callbacks=[early_stopping])
+                              validation_data=(val_x, val_y), shuffle=True, callbacks=[early_stopping, lr_schedule])
 
     # save model
     theta_model.save_weights(save_path)
