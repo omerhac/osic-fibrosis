@@ -1,13 +1,12 @@
 import tensorflow as tf
-import os
-import etl
+import numpy as np
 from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, MaxPooling2D, SeparableConv2D\
     , concatenate, GlobalAveragePooling2D
 
 
 # Constants
 IMAGE_SIZE = [224, 224]
-_lambda = 0.8
+_lambda = 0.65
 
 
 def fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment=0.9):
@@ -104,7 +103,7 @@ def qloss(y_true, y_pred):
     q = tf.constant(np.array([qs]), dtype=tf.float32)
     e = y_true - y_pred
     v = tf.maximum(q * e, (q - 1) * e)
-    return K.mean(v)
+    return tf.keras.backend.mean(v)
 
 
 def mloss(_lambda):
@@ -137,8 +136,8 @@ def get_qreg_model(input_shape):
 
     # compile
     model = tf.keras.Model(inp, qunatiles)
-    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.1, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
-                  loss=mloss(_lambda))
+    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
+                  loss=mloss(_lambda), metrics=score)
 
     return model
 

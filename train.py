@@ -77,10 +77,11 @@ def get_lr_callback(batch_size=64, plot=False, epochs=50):
         return lr_scheduler
 
 
-def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt'):
+def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt'):  # TODO: Add prebaked dataset mkjop0
+
     """Train the theta predicting model. Save weights to models_weights/theta_model. Return history dict"""
     # get datasets
-    dataset = pd.read_csv('theta_data/pp_train.csv').drop(["Unnamed: 0"], axis=1)#etl.create_nn_train(model_path=cnn_model_path)
+    dataset = pd.read_csv('theta_data/pp_train.csv')#etl.create_nn_train(model_path=cnn_model_path)
     train_ids, val_ids = etl.get_train_val_split()
 
     # cast dtypes
@@ -91,13 +92,13 @@ def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_
     val_dataset = dataset.loc[dataset["Patient"].isin(val_ids)]  # get validation rows
 
     # split target
-    train_y = train_dataset["Theta"].values
-    val_y = val_dataset["Theta"].values
-    train_x = train_dataset.drop(["Theta", "Patient"], axis=1).values  # drop target and patient id
-    val_x = val_dataset.drop(["Theta", "Patient"], axis=1).values  # drop target and patient id
+    train_y = train_dataset["GT_FVC"].values
+    val_y = val_dataset["GT_FVC"].values
+    train_x = train_dataset.drop(["GT_FVC", "Patient"], axis=1).values  # drop target and patient id
+    val_x = val_dataset.drop(["GT_FVC", "Patient"], axis=1).values  # drop target and patient id
 
     # get model
-    theta_model = models.get_theta_model(train_x.shape[1])  # input vector n_dim is n columns
+    theta_model = models.get_qreg_model(train_x.shape[1])  # input vector n_dim is n columns
 
     # add callbacks
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', mode='auto',
@@ -106,7 +107,7 @@ def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_
 
     # train
     history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
-                              validation_data=(val_x, val_y), shuffle=True, callbacks=[early_stopping, lr_schedule])
+                              validation_data=(val_x, val_y), shuffle=True, callbacks=[early_stopping])
 
     # save model
     theta_model.save_weights(save_path)
@@ -116,8 +117,8 @@ def train_theta_model(save_path, cnn_model_path='models_weights/cnn_model/model_
 
 if __name__ == '__main__':
     # hist = train_cnn_model()
-    hist = train_theta_model('models_weights/theta_model/theta_model_v1')
-    # visualize.plot_training_curves(hist)
+    hist = train_qreg_model('models_weights/theta_model/theta_model_v1')
+    visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 
 
