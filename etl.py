@@ -131,6 +131,9 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
     # predict
     predict.predict_form(exp_dict, data, submission=False)
 
+    # add base FVC and week column
+    data = table_data.get_initials(data)
+
     # get optimal theta
     data["Theta"] = np.abs(data["GT_FVC"] - data["FVC"])
 
@@ -140,6 +143,7 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
         data.loc[index, "Coeff"] = coeff
 
     # normalize
+    data = table_data.preprocess_table_for_nn(data)
 
     return data.drop(["GT_FVC"], axis=1)  # to avoid target leakage
 

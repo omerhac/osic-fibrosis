@@ -85,6 +85,5 @@ if __name__ == '__main__':
     hist = train_theta_model('models_weights/theta_model/theta_model_v1')
     # visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
-    #dataset = pd.read_csv('theta_data/pp_train.csv').drop(["Unnamed: 0"], axis=1)
-    #print(dataset.head(5))
+
 

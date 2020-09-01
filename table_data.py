@@ -167,6 +167,9 @@ def preprocess_table_for_nn(table):
     normalize_feature(ohe_table, "FVC")
     normalize_feature(ohe_table, "Percent")
     normalize_feature(ohe_table, "Age")
+    normalize_feature(ohe_table, "Initial_Week")
+    normalize_feature(ohe_table, "Initial_FVC")
+    normalize_feature(ohe_table, "Norm_Week")
 
     return ohe_table
 
@@ -198,18 +201,26 @@ def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
     return data
 
 
+def get_initials(table):
+    """Create a table with initial FVC and week columns. Create normalized week column"""
+    # get initial week and normalized week
+    table["Initial_Week"] = table.groupby(["Patient"])["Weeks"].transform('min')
+    table["Norm_Week"] = table["Weeks"] - table["Initial_Week"]
+
+    # get initial fvc
+    initial_fvc = table.loc[table["Norm_Week"] == 0][["Patient", "FVC"]]
+    initial_fvc = initial_fvc.rename(columns={"FVC": "Initial_FVC"})  # rename for the merge
+
+    # merge
+    return table.merge(initial_fvc, on="Patient")
+
+
 # TODO: delete this
 if __name__ == "__main__""":
-    import glob
-    import os
-    pd.set_option('display.max_columns', None)
     t = get_train_table()
-    a = glob.glob("/Users/nurithofesh/Desktop/omer/osic-pulmonary-fibrosis-progression/images-norm/*/*")
-    a = set([os.path.basename(path) for path in a])
-    print(a)
-    b = set(t["Patient"].values)
-    print(b)
-    print(b-a)
+    pd.set_option('display.max_columns', None)
+    t = get_initials(t)
+    print(t.head(10))
 
 
 
