@@ -3,7 +3,7 @@ import table_data
 import tensorflow as tf
 import numpy as np
 import tf_record_writer
-import tests
+import pandas as pd
 import predict
 from itertools import chain
 
@@ -139,7 +139,7 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
         coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
         data.loc[index, "Coeff"] = coeff
 
-    # normalize
+    # preprocess
     data = table_data.preprocess_table_for_nn(data)
 
     return data
@@ -163,7 +163,38 @@ def get_train_val_split():
     return train_ids, val_ids
 
 
-if __name__ == "__main__":
-    train_table = create_nn_train()
-    train_table.to_csv('theta_data/pp_train.csv', index=False)
+def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
+    """Create test table for NN"""
+    # get standard form
+    weekly_data = predict.create_submission_form(images_path=test_images_path)
+    weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
+    weekly_data["Weeks"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('float32')
 
+    # predict weekly fvc
+    exp_gen = predict.exponent_generator(test_images_path, for_test=True)
+    exp_dict = {id: exp_func for id, exp_func in exp_gen}
+    predict.predict_form(exp_dict, weekly_data)
+
+    # get initial fvc and week column
+    test_table["Initial_Week"] = test_table["Weeks"]
+    test_table["Initial_FVC"] = test_table["FVC"]
+
+    # merge
+    data = test_table.drop(["Weeks", "FVC"], axis=1).merge(weekly_data, on="Patient")
+
+    # get norm weeks column
+    data["Norm_Week"] = data["Weeks"] - data["Initial_Week"]
+
+    # remove unused features
+    data = data.drop(["Patient_Week", "Confidence"], axis=1)
+
+    return data
+
+
+if __name__ == "__main__":
+    test_table = create_nn_test(table_data.get_test_table())
+    from TablePreprocessor import TablePreprocessor
+    tp = TablePreprocessor()
+    tp.fit(test_table)
+    pp = tp.transform(test_table)
+    pp.to_csv('a.csv', index=False)

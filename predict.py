@@ -34,7 +34,7 @@ class ExpFunc:
         return self._exponential_coefficient
 
 
-def exponent_generator(path, for_test=False, model_path='models_weights/model_v2.ckpt'):
+def exponent_generator(path, for_test=False, model_path='models_weights/cnn_model/model_v2.ckpt'):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an

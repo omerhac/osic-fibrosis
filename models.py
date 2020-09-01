@@ -132,10 +132,11 @@ def get_qreg_model(input_shape):
     # quantile predictions
     pred1 = Dense(3, activation='relu')(d2)
     pred2 = Dense(3, activation='linear')(d2)  # adjusting predictions
-    qunatiles = tf.keras.layers.Lambda(lambda x: x[0] + tf.cumsum(x[1], axis=1))([pred1, pred2])
+    # this is somehow making the model more robust
+    quantiles = tf.keras.layers.Lambda(lambda x: x[0] + tf.cumsum(x[1], axis=1))([pred1, pred2])
 
     # compile
-    model = tf.keras.Model(inp, qunatiles)
+    model = tf.keras.Model(inp, quantiles)
     model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
                   loss=mloss(_lambda), metrics=score)
 

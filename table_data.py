@@ -142,63 +142,10 @@ def get_initial_fvc(id, for_test=False):
         return hist.iloc[0, 0], hist.iloc[0, 1]
 
 
-def normalize_feature(table, feature):
-    """Normalize a numeric feature in pandas DataFrame"""
-    # get stats
-    min = table[feature].min()
-    max = table[feature].max()
-    mean = table[feature].mean()
-
-    # transform
-    table[feature] = (table[feature] - min) / (max - min)
-
-
-def preprocess_table_for_nn(table):
-    """Prepare table data for NN digestion. One hot encode categorical data."""
-    # one hot encode categorical
-    sex = pd.get_dummies(table["Sex"], prefix='Sex')  # one hot encode sex variable
-    smoking_status = pd.get_dummies(table["SmokingStatus"], prefix="SmokingStatus")  # one hot encode smokingstatus
-
-    # concat
-    ohe_table = pd.concat([table, sex, smoking_status], axis=1).drop(["Sex", "SmokingStatus"], axis=1)
-
-    # normalize numeric columns
-    normalize_feature(ohe_table, "Weeks")
-    normalize_feature(ohe_table, "FVC")
-    normalize_feature(ohe_table, "Percent")
-    normalize_feature(ohe_table, "Age")
-    normalize_feature(ohe_table, "Initial_Week")
-    normalize_feature(ohe_table, "Initial_FVC")
-    normalize_feature(ohe_table, "Norm_Week")
-
-    return ohe_table
-
-
 def patient_week_exists(patient, week):
     """Check of a patient week couple exists in train records, return True if it is and False otherwise"""
     train_table = get_train_table()
     return ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any()
-
-
-def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
-    """Create test table for NN"""
-    # get standard form
-    weekly_data = predict.create_submission_form(images_path=test_images_path)
-    weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
-    weekly_data["Weeks"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('float32')
-
-    # predict weekly fvc
-    exp_gen = predict.exponent_generator(test_images_path, for_test=True)
-    exp_dict = {id: exp_func for id, exp_func in exp_gen}
-    predict.predict_form(exp_dict, weekly_data)
-
-    # merge
-    data = test_table.drop(["FVC", "Weeks"], axis=1).merge(weekly_data, on="Patient")
-
-    # remove unused features
-    data = data.drop(["Patient_Week", "Confidence"], axis=1)
-
-    return data
 
 
 def get_initials(table):
