@@ -73,32 +73,32 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
         yield id, exp_func
 
 
-def predict_test(save_path, test_path=IMAGES_GCS_PATH + '/test', new_submission_form=True,
-                 model_path='models_weights/cnn_model/model_v2.ckpt', exp_gen=None):
+def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
+                 cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
+                 qreg_model_path='models_weights/qreg_model/model_v1.ckpt', exp_gen=None):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
-        test_path: path to test images
-        new_submission_form: flag whether to create the submission form from scratch. Else the form should be present
-        at save path.
-        model_path: path to model weights -- only needed if exponent generator is not provided
-        exp_gen: a generator for exponent function, this function will create one if its not provided
+            test_path: path to test images
+            test_table: DataFrame with test patients data
+            cnn_model_path: path to cnn model weights -- only needed if exponent generator is not provided
+            qreg_model_path: path to quantile regression model weights
+            exp_gen: a generator for exponent functions based on cnn predictions, this function will create one
+            if its not provided
     """
 
     # get generator
     if not exp_gen:
         exp_gen = exponent_generator(test_path, for_test=True, model_path=model_path)
 
-    # gather patient exponents
+    # gather patient exponents base on cnn predictions
     exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
 
     # get submission form
-    if new_submission_form:
-        create_submission_form(save_path=save_path, images_path=test_path)
+    create_submission_form(save_path=save_path, images_path=test_path)
     submission = pd.read_csv(save_path)
 
-    # broadcast 50 Confidence level
-    submission["Confidence"] = 200  # TODO: solve how to predict it...
+
 
     # predict FVC
     predict_form(exp_dict, submission)
@@ -150,6 +150,20 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
         form.to_csv(save_path, index=False)
     else:
         return form
+
+
+def qreg_predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
+                      cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
+                      qreg_model_path='models_weights/qreg_model/model_v1.ckpt', exp_gen=None):
+    """"""
+    """Predict test set by quantile regression model and generate a submission file.
+        Args:
+            save_path: where to save predictions
+            test_path: path to test images
+            cnn_model_path: path to cnn model weights -- only needed if exponent generator is not provided
+            exp_gen: a generator for exponent functions based on cnn predictions, this function will create one
+            if its not provided
+        """
 
 
 if __name__ == '__main__':

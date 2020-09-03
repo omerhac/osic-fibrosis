@@ -77,11 +77,15 @@ def get_lr_callback(batch_size=64, plot=False, epochs=50):
         return lr_scheduler
 
 
-def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt'):  # TODO: Add prebaked dataset mkjop0
+def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
+                     pp_train_data=None):  # TODO: Add prebaked dataset param
 
-    """Train the theta predicting model. Save weights to models_weights/theta_model. Return history dict"""
+    """Train the theta predicting model. Save weights to models_weights/qreg_model. Return history dict"""
     # get datasets
-    dataset = pd.read_csv('theta_data/pp_train.csv')#etl.create_nn_train(model_path=cnn_model_path)
+    if not pp_train_data:
+        etl.create_nn_train(model_path=cnn_model_path)
+    else:
+        data = pd.read_csv(pp_train_data)
     train_ids, val_ids = etl.get_train_val_split()
 
     # cast dtypes
@@ -117,7 +121,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 if __name__ == '__main__':
     # hist = train_cnn_model()
-    hist = train_qreg_model('models_weights/theta_model/theta_model_v1')
+    hist = train_qreg_model('models_weights/qreg_model/model_v1')
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 

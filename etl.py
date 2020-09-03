@@ -6,6 +6,7 @@ import tf_record_writer
 import pandas as pd
 import predict
 from itertools import chain
+from TablePreprocessor import TablePreprocessor
 
 AUTO = tf.data.experimental.AUTOTUNE
 
@@ -112,8 +113,13 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     return train_dataset
 
 
-def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
-    """Create NN train table for finding optimal theta"""
+def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', return_processor=False):
+    """Create NN train table for finding optimal theta.
+    Args:
+        model_path: path to CNN model weights to predict the fvc for each week
+        return_processor: whether to return the TablePreprocessor object use to mold the data
+    """
+
     data = table_data.get_train_table()
 
     # remove patient with corrupted images
@@ -140,9 +146,17 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt'):
         data.loc[index, "Coeff"] = coeff
 
     # preprocess
-    data = table_data.preprocess_table_for_nn(data)
+    processor = TablePreprocessor()
+    processor.fit(data)
+    data = processor.transform(data)
 
-    return data
+    # sort columns
+    data = data.sort_index(axis=1)
+
+    if return_processor:
+        return data, processor
+    else:
+        return data
 
 
 def get_train_val_split():
@@ -163,8 +177,14 @@ def get_train_val_split():
     return train_ids, val_ids
 
 
-def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
-    """Create test table for NN"""
+def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/test'):
+    """Create test table for NN predictions.
+    Args:
+        test_table: DataFrame with test patients data
+        processor: TablePreprocessor instance fit on train set for preprocessing the test data
+        test_images_path: path to directory with test images. To generate CNN predictions and suitable prediction form
+    """
+
     # get standard form
     weekly_data = predict.create_submission_form(images_path=test_images_path)
     weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
@@ -193,13 +213,21 @@ def create_nn_test(test_table, test_images_path=IMAGES_GCS_PATH + '/test'):
     # remove unused features
     data = data.drop(["Patient_Week", "Confidence"], axis=1)
 
+    # preprocess
+    data = processor.transform(data)
+
+    # sort columns
+    data = data.sort_index(axis=1)
+
     return data
 
 
 if __name__ == "__main__":
-    test_table = create_nn_test(table_data.get_test_table())
-    from TablePreprocessor import TablePreprocessor
-    tp = TablePreprocessor()
-    tp.fit(test_table)
-    pp = tp.transform(test_table)
-    pp.to_csv('a.csv', index=False)
+    pd.set_option('display.max_columns', None)
+    train_table, processor = create_nn_train(return_processor=True)
+    test_table = create_nn_test(table_data.get_test_table(), processor)
+    train_table.to_csv('theta_data/pp_train.csv', index=False)
+    test_table.to_csv('theta_data/pp_test.csv', index=False)
+    print(train_table.head(5))
+    print(test_table.head(5))
+

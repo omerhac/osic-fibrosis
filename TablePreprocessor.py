@@ -4,8 +4,9 @@ import pandas as pd
 class TablePreprocessor:
     """A class to preprocess data before feeding to the quantiles regression model.
     Can fit() on the training data and then transform the train / test data.
-    Normalizes numeric columns and one hot encodes categorical data.
+    Min-Max scale numeric columns and one hot encodes categorical data.
     """
+
     def __init__(self):
         self._scale_dict = {}
 
@@ -20,7 +21,7 @@ class TablePreprocessor:
         self._scale_dict["Norm_Week"] = (table["Norm_Week"].min(), table["Norm_Week"].max())
 
     def normalize_feature(self, table, feature):
-        """Normalize a numeric feature in pandas DataFrame"""
+        """Min-Max scale a numeric feature in pandas DataFrame"""
         # get stats
         min, max = self._scale_dict[feature]
 
