@@ -30,9 +30,15 @@ class TablePreprocessor:
 
     def transform(self, table):
         """Preprocess table for NN digestion"""
-        # one hot encode categorical
-        sex = pd.get_dummies(table["Sex"], prefix='Sex')  # one hot encode sex variable
-        smoking_status = pd.get_dummies(table["SmokingStatus"], prefix="SmokingStatus")  # one hot encode smokingstatus
+        # one hot encode sex variable
+        sex = table["Sex"].astype(
+            pd.CategoricalDtype(categories=["Male", "Female"]))
+        sex = pd.get_dummies(sex, prefix='Sex')
+
+        # one hot encode smokingstatus
+        smoking_status = table["SmokingStatus"].astype(
+            pd.CategoricalDtype(categories=["Currently smokes", "Ex-smoker", "Never smoked"]))
+        smoking_status = pd.get_dummies(smoking_status, prefix="SmokingStatus")
 
         # concat
         ohe_table = pd.concat([table, sex, smoking_status], axis=1).drop(["Sex", "SmokingStatus"], axis=1)
