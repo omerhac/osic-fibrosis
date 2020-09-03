@@ -7,6 +7,7 @@ import pandas as pd
 import predict
 from itertools import chain
 from TablePreprocessor import TablePreprocessor
+import pickle
 
 AUTO = tf.data.experimental.AUTOTUNE
 
@@ -113,11 +114,11 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     return train_dataset
 
 
-def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', return_processor=False):
+def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', processor_save_path=None):
     """Create NN train table for finding optimal theta.
     Args:
         model_path: path to CNN model weights to predict the fvc for each week
-        return_processor: whether to return the TablePreprocessor object use to mold the data
+        processor_save_path: path to save pickled preprocessor
     """
 
     data = table_data.get_train_table()
@@ -153,10 +154,11 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', return_
     # sort columns
     data = data.sort_index(axis=1)
 
-    if return_processor:
-        return data, processor
-    else:
-        return data
+    # save pre processor
+    if processor_save_path:
+        pickle.dump(processor, open(processor_save_path, 'wb'))
+
+    return data
 
 
 def get_train_val_split():
@@ -177,12 +179,15 @@ def get_train_val_split():
     return train_ids, val_ids
 
 
-def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/test'):
+def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/test',
+                   cnn_model_path='models_weights/cnn_model/model_v2.ckpt', exp_gen=None):
     """Create test table for NN predictions.
     Args:
         test_table: DataFrame with test patients data
         processor: TablePreprocessor instance fit on train set for preprocessing the test data
         test_images_path: path to directory with test images. To generate CNN predictions and suitable prediction form
+        cnn_model_path: path to cnn model used to predict test data
+        exp_gen: exponent functions generator. This function will create one if its not provided.
     """
 
     # get standard form
@@ -191,7 +196,8 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
     weekly_data["Weeks"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('float32')
 
     # predict weekly fvc
-    exp_gen = predict.exponent_generator(test_images_path, for_test=True)
+    if not exp_gen:
+        exp_gen = predict.exponent_generator(test_images_path, model_path=cnn_model_path, for_test=True)
     exp_dict = {id: exp_func for id, exp_func in exp_gen}
     predict.predict_form(exp_dict, weekly_data)
 
@@ -224,10 +230,5 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
 
 if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
-    train_table, processor = create_nn_train(return_processor=True)
-    test_table = create_nn_test(table_data.get_test_table(), processor)
-    train_table.to_csv('theta_data/pp_train.csv', index=False)
-    test_table.to_csv('theta_data/pp_test.csv', index=False)
-    print(train_table.head(5))
-    print(test_table.head(5))
+
 

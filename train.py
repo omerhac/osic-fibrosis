@@ -14,7 +14,7 @@ CNN_IMAGE_SIZE = (224, 224)
 # Theta constants
 THETA_EPOCHS = 1500
 THETA_BATCH_SIZE = 256
-THETA_STEPS_PER_EPOCH = 32994 // CNN_BATCH_SIZE
+THETA_STEPS_PER_EPOCH = 32994 // THETA_BATCH_SIZE
 
 
 def train_cnn_model(save_path):
@@ -78,14 +78,20 @@ def get_lr_callback(batch_size=64, plot=False, epochs=50):
 
 
 def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
-                     pp_train_data=None):  # TODO: Add prebaked dataset param
+                     pp_train_data=None):
 
-    """Train the theta predicting model. Save weights to models_weights/qreg_model. Return history dict"""
+    """Train the theta predicting model. Save weights to models_weights/qreg_model. Return history dict.
+    Args:
+        save_path: path to save model weights
+        cnn_model_path: path to CNN model weights. Used to predict the train data. Only needed if train data isn't
+        provided.
+        pp_train_data: optional preprocessed train data. Will create it if not provided.
+    """
     # get datasets
     if not pp_train_data:
-        etl.create_nn_train(model_path=cnn_model_path)
+        dataset = etl.create_nn_train(model_path=cnn_model_path)
     else:
-        data = pd.read_csv(pp_train_data)
+        dataset = pd.read_csv(pp_train_data)
     train_ids, val_ids = etl.get_train_val_split()
 
     # cast dtypes
@@ -121,7 +127,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 if __name__ == '__main__':
     # hist = train_cnn_model()
-    hist = train_qreg_model('models_weights/qreg_model/model_v1')
+    hist = train_qreg_model('models_weights/qreg_model/model_v1', pp_train_data='theta_data/pp_train.csv')
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 

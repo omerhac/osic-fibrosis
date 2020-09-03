@@ -5,6 +5,8 @@ import numpy as np
 import visualize
 import pandas as pd
 import models
+import pickle
+import etl
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
@@ -75,33 +77,42 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
 
 def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
                  cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
-                 qreg_model_path='models_weights/qreg_model/model_v1.ckpt', exp_gen=None):
+                 qreg_model_path='models_weights/qreg_model/model_v1.ckpt',
+                 exp_gen=None, processor_path='models_weights/qreg_model/processor.pickle'):
     """Predict test set and generate a submission file
     Args:
         save_path: where to save predictions
-            test_path: path to test images
-            test_table: DataFrame with test patients data
-            cnn_model_path: path to cnn model weights -- only needed if exponent generator is not provided
-            qreg_model_path: path to quantile regression model weights
-            exp_gen: a generator for exponent functions based on cnn predictions, this function will create one
-            if its not provided
+        test_path: path to test images
+        test_table: DataFrame with test patients data
+        cnn_model_path: path to cnn model weights -- only needed if exponent generator is not provided
+        qreg_model_path: path to quantile regression model weights
+        exp_gen: a generator for exponent functions based on cnn predictions, this function will create one
+        if its not provided
+        processor_path: path to pickled preprocessor for table data
     """
 
     # get generator
     if not exp_gen:
-        exp_gen = exponent_generator(test_path, for_test=True, model_path=model_path)
+        exp_gen = exponent_generator(test_path, for_test=True, model_path=cnn_model_path)
 
-    # gather patient exponents base on cnn predictions
-    exp_dict = {id: exp_func for id, exp_func in exp_gen}  # a dictionary with mapping patient -> FVC exponent function
+    # get preprocessor
+    processor = pickle.load(open(processor_path, 'rb'))
 
-    # get submission form
-    create_submission_form(save_path=save_path, images_path=test_path)
-    submission = pd.read_csv(save_path)
+    # get processed test table
+    test_data = etl.create_nn_test(test_table, processor, test_images_path=test_path, exp_gen=exp_gen)
 
+    # get submission form format
+    submission = test_data[["Patient", "Weeks"]]
+    test_data = test_data.values
 
+    # get model
+    model = models.get_qreg_model(test_data.shape[1])
+    model.load_weights(qreg_model_path)
 
-    # predict FVC
-    predict_form(exp_dict, submission)
+    # predict
+    preds = model.predict(test_data)
+    submission["FVC"] = preds[1, :]  # fvc prediction is the median prediction
+    submission["Confidence"] = (preds[2,:]-preds[0,:]) / 2  # confidence prediction is the top quantile-bottom quantile
 
     # save
     submission.to_csv(save_path, index=False)
@@ -152,19 +163,5 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
         return form
 
 
-def qreg_predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
-                      cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
-                      qreg_model_path='models_weights/qreg_model/model_v1.ckpt', exp_gen=None):
-    """"""
-    """Predict test set by quantile regression model and generate a submission file.
-        Args:
-            save_path: where to save predictions
-            test_path: path to test images
-            cnn_model_path: path to cnn model weights -- only needed if exponent generator is not provided
-            exp_gen: a generator for exponent functions based on cnn predictions, this function will create one
-            if its not provided
-        """
-
-
 if __name__ == '__main__':
-    predict_test('submissions/sub_2.csv')
+    predict_test('submissions/sub_2.csv', table_data.get_test_table())

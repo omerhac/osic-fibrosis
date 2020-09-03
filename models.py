@@ -78,8 +78,8 @@ def score(y_true, y_pred):
     tf.dtypes.cast(y_true, tf.float32)
     tf.dtypes.cast(y_pred, tf.float32)
 
-    # compute sigma as the difference betwwen the marginal quantiles
-    sigma = y_pred[:, 2] - y_pred[:, 0]
+    # compute sigma as the difference betwwen the marginal quantiles divided by 2
+    sigma = (y_pred[:, 2] - y_pred[:, 0]) / 2
     sigma_clip = tf.maximum(sigma, C1)
 
     # compute fvc as the median quantile
