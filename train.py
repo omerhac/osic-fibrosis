@@ -111,7 +111,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
     theta_model = models.get_qreg_model(train_x.shape[1])  # input vector n_dim is n columns
 
     # add callbacks
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', mode='auto',
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_score', mode='auto',
                                                       restore_best_weights=True, patience=3, verbose=1)
     lr_schedule = get_lr_callback(batch_size=THETA_BATCH_SIZE, epochs=THETA_EPOCHS, plot=False)
 
