@@ -79,7 +79,7 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
                  cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
                  qreg_model_path='models_weights/qreg_model/model_v1.ckpt',
                  exp_gen=None, processor_path='models_weights/qreg_model/processor.pickle'):
-    """Predict test set and generate a submission file
+    """Predict test set and generate a submission file.
     Args:
         save_path: where to save predictions
         test_path: path to test images
