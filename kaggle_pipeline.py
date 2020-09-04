@@ -4,6 +4,7 @@ import os
 import glob
 import matplotlib.pyplot as plt
 import models
+import pydicom
 import predict
 
 # images size
