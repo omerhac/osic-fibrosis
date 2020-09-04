@@ -54,3 +54,7 @@ class TablePreprocessor:
 
         return ohe_table
 
+    def inverse_transform(self, table, feature):
+        """Inverse transform the feature. Assumes the feature is already transformed"""
+        min, max = self._scale_dict[feature]  # get values
+        table[feature] = table[feature] * (max - min) + min
