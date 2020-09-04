@@ -48,9 +48,9 @@ def get_lr_callback(batch_size=64, plot=False, epochs=50):
     """Returns a lr_scheduler callback which is used for training.
     Credit to 'from coffee import *' from kaggle at https://www.kaggle.com/chrisden'
     """
-    lr_start = 0.00001
-    lr_max = 0.00001 * batch_size  # higher batch size --> higher lr
-    lr_min = 0.000001
+    lr_start = 0.0001
+    lr_max = 0.0001 * batch_size  # higher batch size --> higher lr
+    lr_min = 0.00001
     # 30% of all epochs are used for ramping up the LR and then declining starts
     lr_ramp_ep = epochs * 0.3
     lr_sus_ep = 0

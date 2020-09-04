@@ -103,16 +103,16 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
 
     # get submission form format
     submission = test_data[["Patient", "Weeks"]]
-    test_data = test_data.drop(["Patient"], axis=1).values
-    print(test_data)
+    test_data = test_data.drop(["Patient"], axis=1).astype('float32').values
+
     # get model
     model = models.get_qreg_model(test_data.shape[1])
     model.load_weights(qreg_model_path)
 
     # predict
     preds = model.predict(test_data)
-    submission["FVC"] = preds[1, :]  # fvc prediction is the median prediction
-    submission["Confidence"] = (preds[2, :]-preds[0, :]) / 2  # confidence prediction is (top quant - bottom quant)/2
+    submission["FVC"] = preds[:, 1]  # fvc prediction is the median prediction
+    submission["Confidence"] = (preds[:, 2]-preds[:, 0]) / 2  # confidence prediction is (top quant - bottom quant)/2
 
     # save
     submission.to_csv(save_path, index=False)

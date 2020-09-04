@@ -6,7 +6,7 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, Ma
 
 # Constants
 IMAGE_SIZE = [224, 224]
-_lambda = 0.65
+_lambda = 0.8
 
 
 def fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment=0.9):
