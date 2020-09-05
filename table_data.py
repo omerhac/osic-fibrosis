@@ -142,10 +142,16 @@ def get_initial_fvc(id, for_test=False):
         return hist.iloc[0, 0], hist.iloc[0, 1]
 
 
-def patient_week_exists(patient, week):
-    """Check of a patient week couple exists in train records, return True if it is and False otherwise"""
+def get_patient_week_gt_fvc(patient_week):
+    """Get the patient_week pair ground truth FVC from train table"""
     train_table = get_train_table()
-    return ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any()
+    patient = patient_week.split('_')[0]
+    week = int(patient_week.split('_')[1])
+
+    if ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any():
+        return train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week)]["FVC"].values
+    else:
+        return np.nan
 
 
 def get_initials(table):
@@ -165,9 +171,8 @@ def get_initials(table):
 # TODO: delete this
 if __name__ == "__main__""":
     t = get_train_table()
-    pd.set_option('display.max_columns', None)
-    t = get_initials(t)
-    print(t.head(10))
+    print(t.head(5))
+    print(get_patient_week_gt_fvc("ID00007637202177411956430_11"))
 
 
 
