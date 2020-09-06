@@ -137,7 +137,7 @@ def get_qreg_model(input_shape):
 
     # compile
     model = tf.keras.Model(inp, quantiles)
-    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
+    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
                   loss=mloss(_lambda), metrics=score)
 
     return model

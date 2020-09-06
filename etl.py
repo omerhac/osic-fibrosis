@@ -233,5 +233,5 @@ if __name__ == "__main__":
     pp_train = create_nn_train(processor_save_path='models_weights/qreg_model/processor.pickle')
     pp_test = create_nn_test(table_data.get_train_table(),
                              pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb')))
-    pp_train.to_csv('theta_data/pp_train.csv')
-    pp_test.to_csv('theta_data/pp_test.csv')
+    pp_train.to_csv('theta_data/pp_train.csv', index=False)
+    pp_test.to_csv('theta_data/pp_test.csv', index=False)

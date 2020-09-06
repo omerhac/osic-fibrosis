@@ -174,4 +174,4 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
 
 
 if __name__ == '__main__':
-    predict_test('submissions/sub_3.csv', table_data.get_test_table())
+    predict_test('submissions/sub_4.csv', table_data.get_test_table())

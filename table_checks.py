@@ -5,8 +5,8 @@ import pickle
 import pandas as pd
 import table_data
 
-sub = pd.read_csv('submissions/sub_3.csv')
-sub["GT_FVC"] = sub["Patient_Week"].apply(get_patient_week_gt_fvc)
+sub = pd.read_csv('submissions/sub_4.csv')
+sub["GT_FVC"] = sub["Patient_Week"].apply(table_data.get_patient_week_gt_fvc)
 
 sub_with_gt = sub.loc[sub["GT_FVC"].isna() == False]
 y_true = sub_with_gt["GT_FVC"].values
@@ -14,7 +14,6 @@ y_pred = sub_with_gt["FVC"].values
 theta = sub_with_gt["Confidence"].values
 score = metrics.laplace_log_likelihood(y_true, y_pred, theta)
 print(score)
-sub_with_gt.to_csv('preds_on_submission.csv')
 
 pd.set_option('display.max_columns', None)
 t = table_data.get_train_table()
@@ -53,7 +52,6 @@ theta = (preds[:, 2] - preds[:, 0]) / 2
 score = metrics.laplace_log_likelihood(y_true, y_pred, theta)
 tests["Preds"] = y_pred
 tests["Theta"] = theta
-tests.to_csv('train_preds_on_test_ids.csv')
 print(score)
 
 # check preprocessed test
@@ -66,6 +64,5 @@ processor.inverse_transform(pp_test, "Weeks")
 processor.inverse_transform(pp_test, "Norm_Week")
 processor.inverse_transform(pp_test, "Initial_Week")
 processor.inverse_transform(pp_test, "Initial_FVC")
-pp_test.to_csv('check.csv', index=False)
 
 
