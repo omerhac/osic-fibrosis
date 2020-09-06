@@ -14,7 +14,7 @@ y_pred = sub_with_gt["FVC"].values
 theta = sub_with_gt["Confidence"].values
 score = metrics.laplace_log_likelihood(y_true, y_pred, theta)
 print(score)
-
+sub_with_gt.to_csv('sub_with_gt.csv')
 pd.set_option('display.max_columns', None)
 t = table_data.get_train_table()
 t = table_data.get_initials(t)
@@ -43,6 +43,7 @@ print(score)
 sub["Patient"] = sub["Patient_Week"].apply(lambda x: x.split('_')[0])
 test_ids = sub["Patient"].unique()
 tests = t.loc[t["Patient"].isin(test_ids)]
+tests = tests.drop_duplicates()
 print(len(tests))
 y_true = tests["GT_FVC"]
 x = tests.drop(["Patient", "GT_FVC"], axis=1).values
@@ -53,10 +54,13 @@ score = metrics.laplace_log_likelihood(y_true, y_pred, theta)
 tests["Preds"] = y_pred
 tests["Theta"] = theta
 print(score)
+processor = pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb'))
+processor.inverse_transform(tests, "Weeks")
+tests[["Patient", "Weeks", "Preds"]].to_csv('tests.csv')
+#sub_with_gt["test_preds_on_trainset"] = y_pred
 
 # check preprocessed test
 pp_test = pd.read_csv('theta_data/pp_test.csv')
-processor = pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb'))
 preds = model.predict(pp_test.drop(["Patient"], axis=1).values)
 pp_test["Pred"] = preds[:, 1]
 pp_test["Theta"] = (preds[:, 2] - preds[:, 0]) / 2
@@ -64,5 +68,9 @@ processor.inverse_transform(pp_test, "Weeks")
 processor.inverse_transform(pp_test, "Norm_Week")
 processor.inverse_transform(pp_test, "Initial_Week")
 processor.inverse_transform(pp_test, "Initial_FVC")
+#sub_with_gt["test_preds_on_test_set"] = preds[:, 1]
+#sub_with_gt["Patient"] = pp_test["Patient"]
+#sub_with_gt["Weeks"] = pp_test["Weeks"]
+#sub_with_gt.to_csv('check.csv')
 
 
