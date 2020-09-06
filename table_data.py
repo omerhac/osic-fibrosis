@@ -10,7 +10,7 @@ IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 def get_train_table():
     """Return a dataframe with train records"""
-    return pd.read_csv('train.csv')
+    return pd.read_csv('train.csv').drop([1522])  # duplicated row
 
 
 def get_test_table():
