@@ -174,8 +174,4 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
 
 
 if __name__ == '__main__':
-    p = pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb'))
-    t = pd.read_csv('theta_data/pp_train.csv')
-    p.inverse_transform(t, "Weeks")
-    print(t["Weeks"])
-    print(t["Weeks"].max(), t["Weeks"].min())
+    predict_test('submissions/sub_3.csv', table_data.get_test_table())

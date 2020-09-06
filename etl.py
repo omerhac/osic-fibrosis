@@ -230,5 +230,6 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
 
 if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
-
-
+    p = pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb'))
+    test = create_nn_test(table_data.get_test_table(), p)
+    test.to_csv('theta_data/pp_test.csv', index=False)

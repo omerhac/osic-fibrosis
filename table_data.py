@@ -149,7 +149,7 @@ def get_patient_week_gt_fvc(patient_week):
     week = int(patient_week.split('_')[1])
 
     if ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any():
-        return train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week)]["FVC"].values
+        return train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week)]["FVC"].values[0]
     else:
         return np.nan
 
@@ -170,10 +170,4 @@ def get_initials(table):
 
 # TODO: delete this
 if __name__ == "__main__""":
-    t = get_train_table()
-    print(t.head(5))
-    print(get_patient_week_gt_fvc("ID00007637202177411956430_11"))
-
-
-
-
+    pass
