@@ -164,10 +164,17 @@ def get_initials(table):
     initial_fvc = table.loc[table["Norm_Week"] == 0][["Patient", "FVC"]]
     initial_fvc = initial_fvc.rename(columns={"FVC": "Initial_FVC"})  # rename for the merge
 
+    # broadcast first percent value to all patient records
+    initial_percent = table.loc[table["Norm_Week"] == 0][["Patient", "Percent"]]
+
     # merge
-    return table.merge(initial_fvc, on="Patient")
+    table = table.merge(initial_fvc, on="Patient")  # merge initial fvc
+    table = table.drop(["Percent"], axis=1)  # drop original percent column
+    table = table.merge(initial_percent, on="Patient")  # merge new perencet
+
+    return table
 
 
 # TODO: delete this
 if __name__ == "__main__""":
-    pass
+    pd.set_option('display.max_columns', None)
