@@ -112,11 +112,11 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
     # predict
     preds = model.predict(test_data)
     submission["FVC"] = preds[:, 1]  # fvc prediction is the median prediction
-    submission["Confidence"] = (preds[:, 2]-preds[:, 0]) / 2  # confidence prediction is (top quant - bottom quant)/2
+    submission["Confidence"] = (preds[:, 2]-preds[:, 0])  # confidence prediction is (top quant - bottom quant)
 
     # inverse transform weeks
     processor.inverse_transform(submission, "Weeks")
-    submission["Weeks"] = submission["Weeks"].round(decimals=0).astype('int16')  # ceil weeks
+    submission["Weeks"] = submission["Weeks"].round(decimals=0).astype('int16')  # round weeks
 
     # combine weeks and patient
     submission["Patient_Week"] = submission["Patient"] + "_" + submission["Weeks"].astype('string')
