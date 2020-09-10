@@ -3,7 +3,7 @@ import numpy as np
 import table_data
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # image size
 IMAGE_SIZE = (224, 224)

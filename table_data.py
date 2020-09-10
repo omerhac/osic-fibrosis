@@ -1,11 +1,16 @@
 import pandas as pd
 import numpy as np
 import visualize
+import predict
+import image_data
+
+# images path
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 
 def get_train_table():
     """Return a dataframe with train records"""
-    return pd.read_csv('train.csv')
+    return pd.read_csv('train.csv').drop([1522])  # duplicated row
 
 
 def get_test_table():
@@ -112,39 +117,17 @@ def get_exp_fvc_dict():
     return exp_dict
 
 
-def is_outlier(points, thresh=3.5):
-    """
-    Returns a boolean array with True if points are outliers and False
-    otherwise.
+def get_exp_function_dict():
+    """Create ground truth exponent functions dict for train records"""
+    exp_dict = get_exp_fvc_dict()
 
-    Parameters:
-    -----------
-        points : An numobservations by numdimensions array of observations
-        thresh : The modified z-score to use as a threshold. Observations with
-            a modified z-score (based on the median absolute deviation) greater
-            than this value will be classified as outliers.
+    # create exponent functiosn dict
+    func_dict = {}
+    for id in exp_dict:
+        i_week, i_fvc = get_initial_fvc(id)
+        func_dict[id] = predict.ExpFunc(i_fvc, exp_dict[id], i_week)
 
-    Returns:
-    --------
-        mask : A numobservations-length boolean array.
-
-    References:
-    ----------
-        Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and
-        Handle Outliers", The ASQC Basic References in Quality Control:
-        Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
-    """
-
-    if len(points.shape) == 1:
-        points = points[:, None]
-    median = np.median(points, axis=0)
-    diff = np.sum((points - median)**2, axis=-1)
-    diff = np.sqrt(diff)
-    med_abs_deviation = np.median(diff)
-
-    modified_z_score = 0.6745 * diff / med_abs_deviation
-
-    return modified_z_score > thresh
+    return func_dict
 
 
 def get_initial_fvc(id, for_test=False):
@@ -159,9 +142,41 @@ def get_initial_fvc(id, for_test=False):
         return hist.iloc[0, 0], hist.iloc[0, 1]
 
 
+def get_patient_week_gt_fvc(patient_week):
+    """Get the patient_week pair ground truth FVC from train table"""
+    train_table = get_train_table()
+    patient = patient_week.split('_')[0]
+    week = int(patient_week.split('_')[1])
+
+    if ((train_table["Patient"] == patient) & (train_table["Weeks"] == week)).any():
+        return train_table.loc[(train_table["Patient"] == patient) & (train_table["Weeks"] == week)]["FVC"].values[0]
+    else:
+        return np.nan
+
+
+def get_initials(table):
+    """Create a table with initial FVC and week columns. Create normalized week column"""
+    # get initial week and normalized week
+    table["Initial_Week"] = table.groupby(["Patient"])["Weeks"].transform('min')
+    table["Norm_Week"] = table["Weeks"] - table["Initial_Week"]
+
+    # get initial fvc
+    initial_fvc = table.loc[table["Norm_Week"] == 0][["Patient", "FVC"]]
+    initial_fvc = initial_fvc.rename(columns={"FVC": "Initial_FVC"})  # rename for the merge
+
+    # broadcast first percent value to all patient records
+    initial_percent = table.loc[table["Norm_Week"] == 0][["Patient", "Percent"]]
+
+    # merge
+    table = table.merge(initial_fvc, on="Patient")  # merge initial fvc
+    table = table.drop(["Percent"], axis=1)  # drop original percent column
+    table = table.merge(initial_percent, on="Patient")  # merge new perencet
+
+    return table
+
+
 # TODO: delete this
 if __name__ == "__main__""":
-    print(get_train_table()[50:51])
-    visualize.plot_patient_fvc(get_train_table(), "ID00014637202177757139317")
-    print(get_fvc_hist(get_train_table(), "ID00014637202177757139317"))
-    print(is_outlier(get_fvc_hist(get_train_table(), "ID00014637202177757139317").to_numpy(), thresh=2.2))
+    pd.set_option('display.max_columns', None)
+    table = get_train_table()
+    get_initials(table)

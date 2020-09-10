@@ -3,17 +3,22 @@ import table_data
 import tensorflow as tf
 import numpy as np
 import tf_record_writer
-import tests
+import pandas as pd
+import predict
+from itertools import chain
+from TablePreprocessor import TablePreprocessor
+import pickle
+
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # images size
 IMAGE_SIZE = [512, 512]
 
 # GCS tfrecords path
-TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp'
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp-norm'
 
 
 def create_train_dataset():
@@ -84,7 +89,7 @@ def create_test_dataset():
         del test_ids
 
 
-def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
+def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     """Read from TFRecords. For optimal performance, read from multiple
     TFRecord files at once and set the option experimental_deterministic = False
     to allow order-altering optimizations.
@@ -95,11 +100,8 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
     option_no_order = tf.data.Options()
     option_no_order.experimental_deterministic = False
 
-    # check whether for validation
-    if validation:
-        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/validation/*.tfrec")
-    else:
-        filenames = tf.io.gfile.glob(TF_RECORDS_PATH + "/*.tfrec")
+    # get files according to type
+    filenames = tf.io.gfile.glob(TF_RECORDS_PATH + '/' + type + '/*.tfrec')
 
     train_dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
     train_dataset = train_dataset.with_options(option_no_order)
@@ -112,6 +114,123 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, validation=False):
     return train_dataset
 
 
-if __name__ == "__main__":
-    tests.test_tfrecords_dataset()
+def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', processor_save_path=None):
+    """Create NN train table for finding optimal theta.
+    Args:
+        model_path: path to CNN model weights to predict the fvc for each week
+        processor_save_path: path to save pickled preprocessor
+    """
 
+    data = table_data.get_train_table()
+
+    # remove patient with corrupted images
+    data = data[data["Patient"] != 'ID00011637202177653955184']
+
+    # get predictions on train and val set
+    data["GT_FVC"] = data["FVC"]
+    train_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train', model_path=model_path,
+                                               for_test=False)  # train gen
+    val_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation', model_path=model_path,
+                                             for_test=False)  # validation gen
+
+    exp_dict = {id: exp_func for id, exp_func in chain(train_exp_gen, val_exp_gen)}  # get exponential functions dict
+
+    # predict
+    predict.predict_form(exp_dict, data, submission=False)  # this sets the table FVC values to CNN predictions
+
+    # add base FVC and week column
+    data = table_data.get_initials(data)
+
+    # get exponent coeffs
+    for index, row in data.iterrows():
+        coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
+        data.loc[index, "Coeff"] = coeff
+
+    # preprocess
+    processor = TablePreprocessor()
+    processor.fit(data)
+    data = processor.transform(data)
+
+    # sort columns
+    data = data.sort_index(axis=1)
+
+    # save pre processor
+    if processor_save_path:
+        pickle.dump(processor, open(processor_save_path, 'wb'))
+
+    return data
+
+
+def get_train_val_split():
+    """Return a list of ids of train patients and a list of ids of validation patients"""
+    train_ids = []
+    val_ids = []
+
+    # get image dataset of train patients
+    train_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/train')
+    val_image_dataset = image_data.get_images_dataset_by_id(IMAGES_GCS_PATH + '/validation')
+
+    for patient, images in train_image_dataset:
+        train_ids.append(patient.numpy().decode('utf-8'))
+
+    for patient, images in val_image_dataset:
+        val_ids.append(patient.numpy().decode('utf-8'))
+
+    return train_ids, val_ids
+
+
+def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/test',
+                   cnn_model_path='models_weights/cnn_model/model_v2.ckpt', exp_gen=None):
+    """Create test table for NN predictions.
+    Args:
+        test_table: DataFrame with test patients data
+        processor: TablePreprocessor instance fit on train set for preprocessing the test data
+        test_images_path: path to directory with test images. To generate CNN predictions and suitable prediction form
+        cnn_model_path: path to cnn model used to predict test data
+        exp_gen: exponent functions generator. This function will create one if its not provided.
+    """
+
+    # get standard form
+    weekly_data = predict.create_submission_form(images_path=test_images_path)
+    weekly_data["Patient"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[0])
+    weekly_data["Weeks"] = weekly_data["Patient_Week"].apply(lambda x: x.split('_')[1]).astype('float32')
+
+    # predict weekly fvc
+    if not exp_gen:
+        exp_gen = predict.exponent_generator(test_images_path, model_path=cnn_model_path, for_test=True)
+    exp_dict = {id: exp_func for id, exp_func in exp_gen}
+    predict.predict_form(exp_dict, weekly_data)
+
+    # get initial fvc and week column
+    test_table["Initial_Week"] = test_table["Weeks"]
+    test_table["Initial_FVC"] = test_table["FVC"]
+
+    # merge
+    data = test_table.drop(["Weeks", "FVC"], axis=1).merge(weekly_data, on="Patient")
+
+    # get norm weeks column
+    data["Norm_Week"] = data["Weeks"] - data["Initial_Week"]
+
+    # get exponent coeffs
+    for index, row in data.iterrows():
+        coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
+        data.loc[index, "Coeff"] = coeff
+
+    # remove unused features
+    data = data.drop(["Patient_Week", "Confidence"], axis=1)
+
+    # preprocess
+    data = processor.transform(data)
+
+    # sort columns
+    data = data.sort_index(axis=1)
+
+    return data
+
+
+if __name__ == "__main__":
+    pd.set_option('display.max_columns', None)
+    pp_train = create_nn_train(processor_save_path='models_weights/qreg_model/processor.pickle')
+    pp_test = create_nn_test(table_data.get_test_table(), pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb')))
+    pp_train.to_csv('pp_train.csv', index=False)
+    pp_test.to_csv('pp_test.csv', index=False)
