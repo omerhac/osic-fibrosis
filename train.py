@@ -78,7 +78,7 @@ def get_lr_callback(batch_size=64, plot=False, epochs=50):
 
 
 def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
-                     pp_train_data=None):
+                     pp_train_data=None, without_validation=False):
 
     """Train the theta predicting model. Save weights to models_weights/qreg_model. Return history dict.
     Args:
@@ -86,7 +86,9 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
         cnn_model_path: path to CNN model weights. Used to predict the train data. Only needed if train data isn't
         provided.
         pp_train_data: optional preprocessed train data. Will create it if not provided.
+        without_validation: a flag to order training on the whole training set without validation.
     """
+
     # get datasets
     if not pp_train_data:
         dataset = etl.create_nn_train(model_path=cnn_model_path)
@@ -116,8 +118,13 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
     lr_schedule = get_lr_callback(batch_size=THETA_BATCH_SIZE, epochs=THETA_EPOCHS, plot=False)
 
     # train
-    history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
-                              validation_data=(val_x, val_y), shuffle=True, callbacks=[lr_schedule])
+    if without_validation:
+        history = theta_model.fit(x=np.concatenate([train_x, val_x]), y=np.concatenate([train_y, val_y]),
+                                  epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE, shuffle=True,
+                                  callbacks=[lr_schedule])
+    else:
+        history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
+                                  validation_data=(val_x, val_y), shuffle=True, callbacks=[lr_schedule])
 
     # save model
     theta_model.save_weights(save_path)
@@ -127,7 +134,8 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 if __name__ == '__main__':
     # hist = train_cnn_model()
-    hist = train_qreg_model('models_weights/qreg_model/model_v1.ckpt', pp_train_data='theta_data/pp_train.csv')
+    hist = train_qreg_model('models_weights/qreg_model/model_v2.ckpt', pp_train_data='theta_data/pp_train.csv',
+                            without_validation=True)
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 

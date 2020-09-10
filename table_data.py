@@ -178,5 +178,7 @@ def get_initials(table):
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-    table = get_train_table()
-    get_initials(table)
+    t = get_train_table().values
+
+
+
