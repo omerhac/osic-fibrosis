@@ -92,7 +92,7 @@ def get_patient_fvc_exp(table, id, remove_outliers=False):
 
     # remove outliers if commanded
     if remove_outliers:
-        hist = remove_outliers(remove_outliers(hist))  # remove 2 outliers
+        hist = remove_outlier(remove_outlier(hist))  # remove 2 outliers
 
     # compute logs
     weeks = hist["Weeks"]
