@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tests
 import os
+from pydicom import dcmread
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Just disables the warning, doesn't enable AVX/FMA
@@ -127,6 +128,14 @@ def read_image(im_path, decode=True):
         return tf.io.decode_jpeg(tf.io.read_file(im_path))
     else:
         return tf.io.read_file(im_path)
+
+
+def normalize_image(image):
+    """Return a min-max and zero centered version of the image"""
+    min = tf.math.reduce_min(image)
+    max = tf.math.reduce_max(image)
+    norm_image = (image - min) / (max - min)
+    return norm_image
 
 
 # TODO: delete this

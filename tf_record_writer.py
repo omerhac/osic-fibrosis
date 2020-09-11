@@ -114,7 +114,8 @@ def read_tfrecord(example, image_size=IMAGE_SIZE):
     # decode image
     image = tf.image.decode_jpeg(example['image'], channels=3)
     image = image_data.resize_and_crop_image(image, image_size)  # crop to image_size
-    image = tf.cast(image, tf.uint8)  # cast for memory efficiency
+    image = tf.cast(image, tf.float32)  # cast for normalizing
+    image = image_data.normalize_image(image)  # normalize image
 
     # get id
     id = example['id']

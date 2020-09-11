@@ -1,5 +1,5 @@
 import tensorflow as tf
-import numpy as np
+import metrics
 from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, MaxPooling2D, SeparableConv2D\
     , concatenate, GlobalAveragePooling2D
 
@@ -65,60 +65,6 @@ def get_sqeezenet_model(image_size=IMAGE_SIZE):
     return model
 
 
-# This section is taken from 'https://www.kaggle.com/chrisden/6-82-quantile-reg-lr-schedulers-checkpoints'
-# I don't know who created the original kernel so I thank 'from coffee import *'
-# from kaggle at https://www.kaggle.com/chrisden' from whom I copied this...
-
-def score(y_true, y_pred):
-    """Calculate the competition metric"""
-    # create constants for the loss function
-    C1, C2 = tf.constant(70, dtype='float32'), tf.constant(1000, dtype="float32")
-
-    # cast dtypes
-    tf.dtypes.cast(y_true, tf.float32)
-    tf.dtypes.cast(y_pred, tf.float32)
-
-    # compute sigma as the difference betwwen the marginal quantiles divided by 2
-    sigma = (y_pred[:, 2] - y_pred[:, 0])
-    sigma_clip = tf.maximum(sigma, C1)
-
-    # compute fvc as the median quantile
-    fvc_pred = y_pred[:, 1]
-
-    # compute delta as the error between ground truth and the computed median
-    delta = tf.abs(y_true[:, 0] - fvc_pred)
-    delta = tf.minimum(delta, C2)
-
-    # compute metric
-    sq2 = tf.sqrt(tf.dtypes.cast(2, dtype=tf.float32))
-    metric = (delta / sigma_clip) * sq2 + tf.math.log(sigma_clip * sq2)
-
-    return tf.keras.backend.mean(metric)
-
-
-def qloss(y_true, y_pred):
-    """Calculate Pinball loss"""
-    # IMPORTANT: define quartiles, feel free to change here!
-    qs = [0.2, 0.50, 0.8]
-    q = tf.constant(np.array([qs]), dtype=tf.float32)
-    e = y_true - y_pred
-    v = tf.maximum(q * e, (q - 1) * e)
-    return tf.keras.backend.mean(v)
-
-
-def mloss(_lambda):
-    """Combine Score and qloss.
-    Args:
-        _lambda: weighting constant for how much competition metric should be in the loss functio.
-                 higher _lambda -> lower weight for the competition metric
-    """
-
-    def loss(y_true, y_pred):
-        return _lambda * qloss(y_true, y_pred) + (1 - _lambda) * score(y_true, y_pred)
-
-    return loss
-
-
 def get_qreg_model(input_shape):
     """Return a NN model that maps patient records, CNN FVC prediction and exponent coefficients to quantile FVC
      prediction"""
@@ -138,13 +84,14 @@ def get_qreg_model(input_shape):
     # compile
     model = tf.keras.Model(inp, quantiles)
     model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
-                  loss=mloss(_lambda), metrics=score)
+                  loss=metrics.mloss(_lambda), metrics=metrics.score)
 
     return model
 
 
 if __name__ == '__main__':
     print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+    print(get_sqeezenet_model(image_size=[512, 512]).summary())
 
 
 
