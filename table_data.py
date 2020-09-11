@@ -204,14 +204,12 @@ def remove_outlier(fvc_hist):
     Do not remove the first nor the last point"""
 
     max_ind = get_cooks_distance(fvc_hist)[1:-1].argmax() + 1  # remove first and last
-    fvc_hist = fvc_hist.reset_index()
+    fvc_hist = fvc_hist.reset_index(drop=True)
     return fvc_hist.drop(max_ind, axis=0)
 
 
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-    t = get_train_table().values
-
 
 
