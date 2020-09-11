@@ -67,7 +67,7 @@ def write_tfrecords(type='train'):
     images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/' + type, decode_images=False)  # dont decode images for tfrecords writing
 
     if type != 'test':  # not for test patients..
-        exp_dict = table_data.get_exp_fvc_dict()  # exponential coefficient for every patient
+        exp_dict = table_data.get_exp_fvc_dict(remove_outliers=True)  # exponential coefficient for every patient
 
     # batch
     images_dataset = images_dataset.batch(SHARD_SIZE)

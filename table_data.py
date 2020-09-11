@@ -3,6 +3,7 @@ import numpy as np
 import visualize
 import predict
 import image_data
+from statsmodels.formula.api import ols
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
@@ -77,16 +78,21 @@ def get_poly_fvc_dict():
     return polys_dict
 
 
-def get_patient_fvc_exp(table, id):
+def get_patient_fvc_exp(table, id, remove_outliers=False):
     """Get a patient exponential coefficient.
     Each patient has his own fvc progression that can be described by Ie^-kt.
     Wheres I is the initial FCV measure, k is the exponential coefficient and t is time.
     Args:
         table--data table with records
         id--id of the patient
+        remove_outliers--flag whether to remove outliers using cooks distance
     """
 
     hist = get_fvc_hist(table, id)
+
+    # remove outliers if commanded
+    if remove_outliers:
+        hist = remove_outliers(remove_outliers(hist))  # remove 2 outliers
 
     # compute logs
     weeks = hist["Weeks"]
@@ -101,8 +107,11 @@ def get_patient_fvc_exp(table, id):
     return -neg_k
 
 
-def get_exp_fvc_dict():
-    """Return a dict with a mapping from id to their exponential fvc estimation coefficient"""
+def get_exp_fvc_dict(remove_outliers=False):
+    """Return a dict with a mapping from id to their exponential fvc estimation coefficient.
+    Args:
+        remove_outliers: flag whether to remove ouliers using cooks distance
+    """
     table = get_train_table()
     exp_dict = {}
 
@@ -111,7 +120,7 @@ def get_exp_fvc_dict():
 
     # iterate threw every id
     for id in ids:
-        k = get_patient_fvc_exp(table, id)
+        k = get_patient_fvc_exp(table, id, remove_outliers=remove_outliers)
         exp_dict[id] = k
 
     return exp_dict
@@ -173,6 +182,26 @@ def get_initials(table):
     table = table.merge(initial_percent, on="Patient")  # merge new perencet
 
     return table
+
+
+def get_cooks_distance(observations):
+    """Return the cooks distance of every point in observations"""
+    x, y = observations.columns  # get predictor and response variable
+
+    m = ols("{} ~ {}".format(x, y), observations).fit() # fit a statsmodels ols
+    infl = m.get_influence() # check influens on every point
+    cooks_dists = infl.summary_frame()["cooks_d"] # show cooks distance for every poin
+
+    return cooks_dists
+
+
+def remove_outlier(fvc_hist):
+    """Remove the point with the largest cooks distance from the fvc observations.
+    Do not remove the first nor the last point"""
+
+    max_ind = get_cooks_distance(fvc_hist)[1:-1].argmax() + 1  # remove first and last
+    fvc_hist = fvc_hist.reset_index()
+    return fvc_hist.drop(max_ind, axis=0)
 
 
 # TODO: delete this
