@@ -126,9 +126,13 @@ def get_exp_fvc_dict(remove_outliers=False):
     return exp_dict
 
 
-def get_exp_function_dict():
-    """Create ground truth exponent functions dict for train records"""
-    exp_dict = get_exp_fvc_dict()
+def get_exp_function_dict(remove_outliers=False):
+    """Create ground truth exponent functions dict for train records.
+    Args:
+        remove_outliers: flag whether to remove outlier
+    """
+
+    exp_dict = get_exp_fvc_dict(remove_outliers=remove_outliers)
 
     # create exponent functiosn dict
     func_dict = {}
