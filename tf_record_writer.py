@@ -11,7 +11,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cloud/gcloud_key.json"  # gcs au
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue'
 
 # GCS tfrecords path
 TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-images-hue'

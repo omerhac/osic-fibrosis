@@ -33,7 +33,7 @@ def train_cnn_model(save_path):
 
     # add callbacks
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_mse', mode='auto',
-                                                      restore_best_weights=True, patience=3, verbose=1)
+                                                      restore_best_weights=True, patience=5, verbose=1)
     # train
     history = network.fit(train_dataset, epochs=CNN_EPOCHS, steps_per_epoch=CNN_STEPS_PER_EPOCH,
                           batch_size=CNN_BATCH_SIZE, validation_data=val_dataset, callbacks=[early_stopping])
@@ -133,7 +133,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 
 if __name__ == '__main__':
-    hist = train_cnn_model('models_weights/cnn_model/model_v2.ckpt')
+    hist = train_cnn_model('models_weights/cnn_model/model_v3.ckpt')
     #hist = train_qreg_model('models_weights/qreg_model/model_v2.ckpt', pp_train_data='theta_data/pp_train.csv',
     #                        without_validation=True)
     visualize.plot_training_curves(hist)

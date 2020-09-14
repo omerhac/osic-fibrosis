@@ -131,10 +131,8 @@ def read_image(im_path, decode=True):
 
 
 def normalize_image(image):
-    """Return a min-max and zero centered version of the image"""
-    min = tf.math.reduce_min(image)
-    max = tf.math.reduce_max(image)
-    norm_image = (image - min) / (max - min)
+    """Return a sacled by 255 image"""
+    norm_image = image / 255
     return norm_image
 
 

@@ -12,7 +12,7 @@ import pickle
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue'
 
 # images size
 IMAGE_SIZE = [512, 512]

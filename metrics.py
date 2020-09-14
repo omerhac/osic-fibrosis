@@ -126,3 +126,7 @@ def mloss(_lambda):
 
     return loss
 
+
+if __name__ == "__main__":
+    exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation', model_path='models_weights/cnn_model/model_v3.ckpt')
+    print(metric_check(exp_gen=exp_gen, n_patients=14))
