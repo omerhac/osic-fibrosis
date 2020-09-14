@@ -1,14 +1,13 @@
 import tensorflow as tf
 import tests
 import os
-from pydicom import dcmread
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Just disables the warning, doesn't enable AVX/FMA
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue'
 
 # images size
 IMAGE_SIZE = [224, 224]
@@ -134,6 +133,21 @@ def normalize_image(image):
     """Return a sacled by 255 image"""
     norm_image = image / 255
     return norm_image
+
+
+# credit to Carlos Sueza from https://www.kaggle.com/carlossouza/end-to-end-model-ct-scans-tabular
+def get_morphological_mask(image, threshold):
+    m = image < threshold
+    m = clear_border(m)
+    m = label(m)
+    areas = [r.area for r in regionprops(m)]
+    areas.sort()
+    if len(areas) > 2:
+        for region in regionprops(m):
+            if region.area < areas[-2]:
+                for coordinates in region.coords:
+                    m[coordinates[0], coordinates[1]] = 0
+    return m > 0
 
 
 # TODO: delete this

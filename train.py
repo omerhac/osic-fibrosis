@@ -10,6 +10,7 @@ CNN_EPOCHS = 20
 CNN_BATCH_SIZE = 16
 CNN_STEPS_PER_EPOCH = 32994 // CNN_BATCH_SIZE
 CNN_IMAGE_SIZE = (224, 224)
+AUTO = tf.data.experimental.AUTOTUNE
 
 # Theta constants
 THETA_EPOCHS = 1500
@@ -28,12 +29,21 @@ def train_cnn_model(save_path):
     train_dataset = train_dataset.batch(CNN_BATCH_SIZE)
     val_dataset = val_dataset.batch(CNN_BATCH_SIZE)
 
+    # data augmentation
+    data_augmentation = tf.keras.Sequential([
+        tf.keras.layers.experimental.preprocessing.RandomRotation(0.2),
+        tf.keras.layers.experimental.preprocessing.RandomFlip(mode='horizontal')
+    ])
+
+    train_dataset = train_dataset.map(lambda image, coeff: (data_augmentation(image, training=True), coeff),
+                                      num_parallel_calls=AUTO)
+
     # get model
     network = models.get_sqeezenet_model(CNN_IMAGE_SIZE)
 
     # add callbacks
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_mse', mode='auto',
-                                                      restore_best_weights=True, patience=5, verbose=1)
+                                                      restore_best_weights=True, patience=8, verbose=1)
     # train
     history = network.fit(train_dataset, epochs=CNN_EPOCHS, steps_per_epoch=CNN_STEPS_PER_EPOCH,
                           batch_size=CNN_BATCH_SIZE, validation_data=val_dataset, callbacks=[early_stopping])
