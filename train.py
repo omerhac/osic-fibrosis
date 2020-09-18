@@ -6,10 +6,10 @@ import pandas as pd
 import numpy as np
 
 # CNN Constants
-CNN_EPOCHS = 20
+CNN_EPOCHS = 40
 CNN_BATCH_SIZE = 16
 CNN_STEPS_PER_EPOCH = 32994 // CNN_BATCH_SIZE
-CNN_IMAGE_SIZE = (224, 224)
+CNN_IMAGE_SIZE = (256, 256)
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Theta constants

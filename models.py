@@ -5,7 +5,7 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, Ma
 
 
 # Constants
-IMAGE_SIZE = [224, 224]
+IMAGE_SIZE = [256, 256]
 _lambda = 0.85
 
 
@@ -89,10 +89,31 @@ def get_qreg_model(input_shape):
     return model
 
 
+def enlarge_cnn_model(model_path):
+    """Take a 256x256 model from model_path and add a first convolutional layer to enlarge the model to 512x512"""
+    prior = get_sqeezenet_model(image_size=[*IMAGE_SIZE])
+    prior.load_weights(model_path)
+
+    # freeze prior layers
+    for layer in prior.layers:
+        layer.trainable = False
+
+    # add conv layer
+    model = tf.keras.Sequential([
+        Input(shape=[512, 512, 3]),
+        Conv2D(3, kernel_size=(7, 7), strides=(2, 2), activation='relu', padding='same'),
+        prior
+    ])
+
+    model.compile(optimizer='adam', loss='mse', metrics=['mse'])
+
+    return model
+
+
 if __name__ == '__main__':
     print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-    print(get_sqeezenet_model(image_size=[512, 512]).summary())
-
+    print(get_sqeezenet_model(image_size=[256, 256]).summary())
+    print(enlarge_cnn_model('models_weights/cnn_model/model_v3.ckpt').summary())
 
 
 

@@ -12,13 +12,13 @@ import pickle
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # images size
-IMAGE_SIZE = [512, 512]
+IMAGE_SIZE = [256, 256]
 
 # GCS tfrecords path
-TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-images-hue'
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp-norm-outliers'
 
 
 def create_train_dataset():

@@ -11,10 +11,10 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cloud/gcloud_key.json"  # gcs au
 AUTO = tf.data.experimental.AUTOTUNE
 
 # GCS PATH to images
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # GCS tfrecords path
-TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-images-hue'
+TF_RECORDS_PATH = 'gs://osic_fibrosis/tfrecords-jpeg-512x512-exp-norm-outliers'
 
 # images size
 IMAGE_SIZE = [512, 512]
@@ -61,7 +61,7 @@ def write_tfrecords(type='train'):
     """
 
     # check type
-    assert type == 'train' or type == 'validation' or type =='test', "type should be train/validion/test"
+    assert type == 'train' or type == 'validation' or type == 'test', "type should be train/validion/test"
 
     # get data
     images_dataset = image_data.get_images_dataset(IMAGES_GCS_PATH + '/' + type, decode_images=False)  # dont decode images for tfrecords writing
