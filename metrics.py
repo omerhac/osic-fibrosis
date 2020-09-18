@@ -4,7 +4,7 @@ import table_data
 import tensorflow as tf
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # image size
 IMAGE_SIZE = (256, 256)
