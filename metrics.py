@@ -7,7 +7,7 @@ import tensorflow as tf
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
 
 # image size
-IMAGE_SIZE = (224, 224)
+IMAGE_SIZE = (256, 256)
 
 
 def laplace_log_likelihood(y_true, y_pred, theta):

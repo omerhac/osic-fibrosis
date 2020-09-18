@@ -12,7 +12,7 @@ import etl
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
 
 # image size
-IMAGE_SIZE = (224, 224)
+IMAGE_SIZE = (256, 256)
 
 
 class ExpFunc:
@@ -36,7 +36,7 @@ class ExpFunc:
         return self._exponential_coefficient
 
 
-def exponent_generator(path, for_test=False, model_path='models_weights/cnn_model/model_v2.ckpt'):
+def exponent_generator(path, for_test=False, model_path='models_weights/cnn_model/model_v2.ckpt', enlarged_model=False):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -46,12 +46,16 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
         path--path to the directory with the images
         for_test--flag if the generator is for the test set
         model_path--path to models_weights
+        enlarged_model: flag whether its an enlarged model
     """
 
     image_dataset = image_data.get_images_dataset_by_id(path)
 
     # get model
-    network = models.get_sqeezenet_model()
+    if enlarged_model:  # get regular or enlarged model
+        network = models.enlarge_cnn_model()
+    else:
+        network = models.get_sqeezenet_model()
     network.load_weights(model_path)
 
     # iterate threw every patient
@@ -78,7 +82,8 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
 def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
                  cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
                  qreg_model_path='models_weights/qreg_model/model_v1.ckpt',
-                 exp_gen=None, processor_path='models_weights/qreg_model/processor.pickle'):
+                 exp_gen=None,
+                 processor_path='models_weights/qreg_model/processor.pickle'):
     """Predict test set and generate a submission file.
     Args:
         save_path: where to save predictions

@@ -9,7 +9,7 @@ import tf_record_writer
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
 
 # images size
-IMAGE_SIZE = [512, 512]
+IMAGE_SIZE = [256, 256]
 
 
 def time_images_dataset_by_id_fetching():

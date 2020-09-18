@@ -89,10 +89,15 @@ def get_qreg_model(input_shape):
     return model
 
 
-def enlarge_cnn_model(model_path):
-    """Take a 256x256 model from model_path and add a first convolutional layer to enlarge the model to 512x512"""
+def enlarge_cnn_model(model_path=None):
+    """Take a 256x256 model from model_path and add a first convolutional layer to enlarge the model to 512x512.
+    Args:
+        model_path: path to model weights which we want to enlarge
+    """
+
     prior = get_sqeezenet_model(image_size=[*IMAGE_SIZE])
-    prior.load_weights(model_path)
+    if model_path:
+        prior.load_weights(model_path)
 
     # freeze prior layers
     for layer in prior.layers:
@@ -101,6 +106,7 @@ def enlarge_cnn_model(model_path):
     # add conv layer
     model = tf.keras.Sequential([
         Input(shape=[512, 512, 3]),
+        Conv2D(64, kernel_size=(7, 7), strides=(1, 1), activation='relu', padding='same'),
         Conv2D(3, kernel_size=(7, 7), strides=(2, 2), activation='relu', padding='same'),
         prior
     ])

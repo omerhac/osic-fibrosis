@@ -6,7 +6,7 @@ import image_data
 from statsmodels.formula.api import ols
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 
 def get_train_table():

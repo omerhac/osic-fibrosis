@@ -8,7 +8,7 @@ import pydicom
 import predict
 
 # images size
-IMAGE_SIZE = [224, 224]
+IMAGE_SIZE = [256, 256]
 
 
 def get_jpeg_image(dcm_path):

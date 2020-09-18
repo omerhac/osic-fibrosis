@@ -10,7 +10,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue'
 
 # images size
-IMAGE_SIZE = [224, 224]
+IMAGE_SIZE = [256, 256]
 
 
 def get_patient_directories_dataset(path):
