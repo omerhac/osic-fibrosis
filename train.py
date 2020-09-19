@@ -18,7 +18,7 @@ THETA_BATCH_SIZE = 256
 THETA_STEPS_PER_EPOCH = 32994 // THETA_BATCH_SIZE
 
 
-def train_cnn_model(save_path, load_path=None, enlarge_model=False):
+def train_cnn_model(save_path, load_path=None, enlarge_model=False, ):
     """Train the CNN model. Save weights to models_weights/cnn_model. Return history dict"""
 
     # get image size
@@ -55,7 +55,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
     lr_schedule = get_lr_callback(batch_size=CNN_BATCH_SIZE,
                                   epochs=CNN_EPOCHS,
                                   lr_start=0.0005, plot=False)  # needed only for transfer learning
-    callback_list = [early_stopping, lr_schedule] if enlarge_model else [early_stopping]
+    callback_list = [early_stopping]
 
     # train
     history = network.fit(train_dataset, epochs=CNN_EPOCHS, steps_per_epoch=CNN_STEPS_PER_EPOCH,
