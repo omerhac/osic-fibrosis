@@ -46,7 +46,7 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
         path--path to the directory with the images
         for_test--flag if the generator is for the test set
         model_path--path to models_weights
-        enlarged_model: flag whether its an enlarged model
+        enlarged_model-- flag whether its an enlarged model
     """
 
     image_dataset = image_data.get_images_dataset_by_id(path)
@@ -60,7 +60,7 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
 
     # iterate threw every patient
     for patient, images in image_dataset:
-        images = images.batch(1)  # batch for model digestion
+        images = images.map(image_data.normalize_image).batch(1)  # normalize images, batch for model digestion
         coeff_sum = 0  # maintain sum
         # iterate threw every image
         for n, image in enumerate(images):
