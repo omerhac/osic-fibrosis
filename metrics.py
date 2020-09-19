@@ -128,5 +128,8 @@ def mloss(_lambda):
 
 
 if __name__ == "__main__":
-    exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation', model_path='models_weights/cnn_model/model_v3.ckpt')
+    exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation',
+                                         model_path='models_weights/cnn_model/model_v4.ckpt',
+                                         image_size=[512, 512],
+                                         enlarged_model=True)
     print(metric_check(exp_gen=exp_gen, n_patients=14))

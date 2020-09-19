@@ -36,7 +36,10 @@ class ExpFunc:
         return self._exponential_coefficient
 
 
-def exponent_generator(path, for_test=False, model_path='models_weights/cnn_model/model_v2.ckpt', enlarged_model=False):
+def exponent_generator(path, for_test=False,
+                       model_path='models_weights/cnn_model/model_v2.ckpt',
+                       image_size=IMAGE_SIZE,
+                       enlarged_model=False):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -47,9 +50,10 @@ def exponent_generator(path, for_test=False, model_path='models_weights/cnn_mode
         for_test--flag if the generator is for the test set
         model_path--path to models_weights
         enlarged_model-- flag whether its an enlarged model
+        image_size-- common size to resize images before feeding to the predicting model
     """
 
-    image_dataset = image_data.get_images_dataset_by_id(path)
+    image_dataset = image_data.get_images_dataset_by_id(path, image_size=image_size)
 
     # get model
     if enlarged_model:  # get regular or enlarged model
@@ -83,7 +87,8 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
                  cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
                  qreg_model_path='models_weights/qreg_model/model_v1.ckpt',
                  exp_gen=None,
-                 processor_path='models_weights/qreg_model/processor.pickle'):
+                 processor_path='models_weights/qreg_model/processor.pickle',
+                 enlarged_model=True):
     """Predict test set and generate a submission file.
     Args:
         save_path: where to save predictions
@@ -94,11 +99,12 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
         exp_gen: a generator for exponent functions based on cnn predictions, this function will create one
         if its not provided
         processor_path: path to pickled preprocessor for table data
+        enlarged_model: a flag whether the provided model at cnn_model_path is enlarged, relevant only if exp_gen=None
     """
 
     # get generator
     if not exp_gen:
-        exp_gen = exponent_generator(test_path, for_test=True, model_path=cnn_model_path)
+        exp_gen = exponent_generator(test_path, for_test=True, model_path=cnn_model_path, enlarged_model=enlarged_model)
 
     # get preprocessor
     processor = pickle.load(open(processor_path, 'rb'))

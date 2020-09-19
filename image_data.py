@@ -25,7 +25,7 @@ def get_images_paths_dataset(path):
     return dataset
 
 
-def get_images_dataset_by_id(path):
+def get_images_dataset_by_id(path, image_size=IMAGE_SIZE):
     """Create images dataset partitioned by id from gcs path.
     The dataset contains tuples of the format (tensor(id), dataset of images of that id)
     """
@@ -50,7 +50,7 @@ def get_images_dataset_by_id(path):
         # create dataset
         images = tf.data.Dataset.list_files(images_paths)
         images = images.map(read_image, num_parallel_calls=AUTO)  # read images
-        images = images.map(resize_and_crop_image, num_parallel_calls=AUTO)  # resize and crop images
+        images = images.map(lambda image: resize_and_crop_image(image, image_size), num_parallel_calls=AUTO)  # resize and crop images
 
         return id, images
 
