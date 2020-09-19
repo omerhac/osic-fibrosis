@@ -50,7 +50,7 @@ def get_images_dataset_by_id(path, image_size=IMAGE_SIZE):
         # create dataset
         images = tf.data.Dataset.list_files(images_paths)
         images = images.map(read_image, num_parallel_calls=AUTO)  # read images
-        images = images.map(lambda image: resize_and_crop_image(image, image_size), num_parallel_calls=AUTO)  # resize and crop images
+        images = images.map(lambda image: resize_and_crop_image(image, new_size=image_size), num_parallel_calls=AUTO)  # resize and crop images
 
         return id, images
 

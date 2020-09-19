@@ -27,16 +27,17 @@ def patient_image_generator(patient_path, image_size=IMAGE_SIZE):
     # generate images
     for image_path in image_paths:
         image = get_jpeg_image(image_path)
-        resized_image = image_data.resize_and_crop_image(image).numpy().astype('uint8')  # TODO: every image preprocessing step should come here to
-        yield resized_image
+        resized_image = image_data.resize_and_crop_image(image, new_size=image_size).numpy().astype('float32')
+        norm_image = image_data.normalize_image(resized_image)  # TODO: every image preprocessing step should come here to
+        yield norm_image
 
 
-def test_generator(test_dir):
+def test_generator(test_dir, image_size=IMAGE_SIZE):
     """Generate a tuple of (ID, patient_images) where patient_images is a generator that yields patient images."""
     patient_dirs = glob.glob(test_dir + '/*')
     for patient in patient_dirs:
         id = os.path.basename(patient)
-        yield id, patient_image_generator(patient)
+        yield id, patient_image_generator(patient, image_size=image_size)
 
 
 def get_initial_fvc(id, test_table_path):
@@ -45,7 +46,11 @@ def get_initial_fvc(id, test_table_path):
     return float(table.loc[table["Patient"] == id]["Weeks"]), float(table[table["Patient"] == id]["FVC"])
 
 
-def exponent_generator(path, model_path='models_weights/model_v2.ckpt', test_table_path='test.csv'):
+def exponent_generator(path,
+                       model_path='models_weights/model_v3.ckpt',
+                       test_table_path='test.csv',
+                       enlarged_model=False,
+                       image_size=IMAGE_SIZE):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -55,12 +60,17 @@ def exponent_generator(path, model_path='models_weights/model_v2.ckpt', test_tab
         path--path to the directory with the images
         for_test--flag if the generator is for the test set
         model_path--path to models_weights
+        enlarged_model--flag whether the provided model is enlarged
+        image_size--image feeding size to the CNN model
     """
 
-    image_dataset = test_generator(path)
+    image_dataset = test_generator(path, image_size=image_size)
 
     # get model
-    network = models.get_sqeezenet_model()
+    if enlarged_model:  # get regular or enlarged model
+        network = models.enlarge_cnn_model()
+    else:
+        network = models.get_sqeezenet_model()
     network.load_weights(model_path)
 
     # iterate threw every patient
