@@ -84,11 +84,12 @@ def exponent_generator(path, for_test=False,
 
 
 def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
-                 cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
-                 qreg_model_path='models_weights/qreg_model/model_v1.ckpt',
+                 cnn_model_path='models_weights/cnn_model/model_v3.ckpt',
+                 qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
                  exp_gen=None,
                  processor_path='models_weights/qreg_model/processor.pickle',
-                 enlarged_model=True):
+                 enlarged_model=True,
+                 image_size=IMAGE_SIZE):
     """Predict test set and generate a submission file.
     Args:
         save_path: where to save predictions
@@ -104,7 +105,8 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
 
     # get generator
     if not exp_gen:
-        exp_gen = exponent_generator(test_path, for_test=True, model_path=cnn_model_path, enlarged_model=enlarged_model)
+        exp_gen = exponent_generator(test_path, for_test=True, model_path=cnn_model_path,
+                                     enlarged_model=enlarged_model, image_size=image_size)
 
     # get preprocessor
     processor = pickle.load(open(processor_path, 'rb'))
@@ -185,4 +187,8 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
 
 
 if __name__ == '__main__':
-    predict_test('submissions/sub_4.csv', table_data.get_test_table())
+    predict_test('submissions/sub_5.csv',
+                 table_data.get_test_table(),
+                 cnn_model_path='models_weights/cnn_model/model_v4.ckpt',
+                 enlarged_model=True,
+                 image_size=[512,512])
