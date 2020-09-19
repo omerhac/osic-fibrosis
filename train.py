@@ -159,13 +159,8 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 
 if __name__ == '__main__':
-    hist = train_cnn_model(
-        'models_weights/cnn_model/model_v5.ckpt',
-        load_path='models_weights/cnn_model/model_v3.ckpt',
-        enlarge_model=True
-    )
-    #hist = train_qreg_model('models_weights/qreg_model/model_v2.ckpt', pp_train_data='theta_data/pp_train.csv',
-    #                        without_validation=True)
+    hist = train_qreg_model('models_weights/qreg_model/model_v3.ckpt', pp_train_data='theta_data/pp_train.csv',
+                            without_validation=False)
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 

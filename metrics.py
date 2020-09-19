@@ -86,7 +86,7 @@ def score(y_true, y_pred):
     tf.dtypes.cast(y_true, tf.float32)
     tf.dtypes.cast(y_pred, tf.float32)
 
-    # compute sigma as the difference betwwen the marginal quantiles divided by 2
+    # compute sigma as the difference betwwen the marginal quantiles
     sigma = (y_pred[:, 2] - y_pred[:, 0])
     sigma_clip = tf.maximum(sigma, C1)
 
