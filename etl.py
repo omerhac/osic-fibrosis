@@ -114,11 +114,16 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     return train_dataset
 
 
-def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', processor_save_path=None):
+def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
+                    processor_save_path=None,
+                    enlarged_model=False,
+                    image_size=IMAGE_SIZE):
     """Create NN train table for finding optimal theta.
     Args:
         model_path: path to CNN model weights to predict the fvc for each week
         processor_save_path: path to save pickled preprocessor
+        enlarged_model: flag whether the provided model is an enlarged one
+        image_size: feeding image size to the cnn model
     """
 
     data = table_data.get_train_table()
@@ -129,9 +134,13 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v2.ckpt', process
     # get predictions on train and val set
     data["GT_FVC"] = data["FVC"]
     train_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train', model_path=model_path,
-                                               for_test=False)  # train gen
+                                               for_test=False,
+                                               enlarged_model=enlarged_model,
+                                               image_size=image_size)  # train gen
     val_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation', model_path=model_path,
-                                             for_test=False)  # validation gen
+                                             for_test=False,
+                                             enlarged_model=enlarged_model,
+                                             image_size=image_size)  # validation gen
 
     exp_dict = {id: exp_func for id, exp_func in chain(train_exp_gen, val_exp_gen)}  # get exponential functions dict
 
@@ -180,14 +189,19 @@ def get_train_val_split():
 
 
 def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/test',
-                   cnn_model_path='models_weights/cnn_model/model_v2.ckpt', exp_gen=None):
+                   cnn_model_path='models_weights/cnn_model/model_v3.ckpt',
+                   exp_gen=None,
+                   enlarged_model=False,
+                   image_size=IMAGE_SIZE):
     """Create test table for NN predictions.
     Args:
         test_table: DataFrame with test patients data
         processor: TablePreprocessor instance fit on train set for preprocessing the test data
         test_images_path: path to directory with test images. To generate CNN predictions and suitable prediction form
         cnn_model_path: path to cnn model used to predict test data
-        exp_gen: exponent functions generator. This function will create one if its not provided.
+        exp_gen: exponent functions generator. This function will create one if its not provided
+        enlarged_model: flag whether the provided model is an enlarged one
+        image_size: feeding image size to the cnn model
     """
 
     # get standard form
@@ -197,7 +211,11 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
 
     # predict weekly fvc
     if not exp_gen:
-        exp_gen = predict.exponent_generator(test_images_path, model_path=cnn_model_path, for_test=True)
+        exp_gen = predict.exponent_generator(test_images_path,
+                                             model_path=cnn_model_path,
+                                             for_test=True,
+                                             enlarged_model=enlarged_model,
+                                             image_size=image_size)
     exp_dict = {id: exp_func for id, exp_func in exp_gen}
     predict.predict_form(exp_dict, weekly_data)
 
@@ -230,7 +248,14 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
 
 if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
-    pp_train = create_nn_train(processor_save_path='models_weights/qreg_model/processor.pickle')
-    pp_test = create_nn_test(table_data.get_test_table(), pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb')))
+    pp_train = create_nn_train(model_path='models_weights/cnn_model/model_v4.ckpt',
+                               enlarged_model=True,
+                               image_size=[512, 512],
+                               processor_save_path='models_weights/qreg_model/processor.pickle')
+    pp_test = create_nn_test(table_data.get_test_table(),
+                             pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb')),
+                             cnn_model_path='models_weights/cnn_model/model_v4.ckpt',
+                             enlarged_model=True,
+                             image_size=[512, 512])
     pp_train.to_csv('pp_train.csv', index=False)
     pp_test.to_csv('pp_test.csv', index=False)

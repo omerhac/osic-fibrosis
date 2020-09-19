@@ -19,7 +19,12 @@ THETA_STEPS_PER_EPOCH = 32994 // THETA_BATCH_SIZE
 
 
 def train_cnn_model(save_path, load_path=None, enlarge_model=False, ):
-    """Train the CNN model. Save weights to models_weights/cnn_model. Return history dict"""
+    """Train the CNN model. Save weights to models_weights/cnn_model. Return history dict
+        Arguments:
+            save_path: where to save the model
+            load_path: path to load pretrained model checkpoint
+            enlarge_model: flag whether to train en enlarged cnn model
+    """
 
     # get image size
     image_size = [512, 512] if enlarge_model else CNN_IMAGE_SIZE

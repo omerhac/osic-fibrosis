@@ -37,7 +37,7 @@ class ExpFunc:
 
 
 def exponent_generator(path, for_test=False,
-                       model_path='models_weights/cnn_model/model_v2.ckpt',
+                       model_path='models_weights/cnn_model/model_v3.ckpt',
                        image_size=IMAGE_SIZE,
                        enlarged_model=False):
     """Create a generator which returns exponent function for patients whose images are at path.
