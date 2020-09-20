@@ -188,6 +188,25 @@ def get_initials(table):
     return table
 
 
+def get_predicted_percent(table):
+    """Create a table with predicted percent column. initial percent * factor initial = fvc ->
+    predicted percent = predicted fvc / factor
+    """
+
+    # create factors
+    initials = table.loc[table["Norm_Week"] == 0][["Patient", "Percent", "FVC"]]
+    initials["Factor"] = initials["FVC"] / initials["Percent"]
+
+    # merge factors
+    table = table.merge(initials[["Patient", "Factor"]], on="Patient")
+
+    # create predicted fvc and delete residuals
+    table["Predicted_Percent"] = table["FVC"] / table["Factor"]
+    table = table.drop(["Factor"], axis=1)
+
+    return table
+
+
 def get_cooks_distance(observations):
     """Return the cooks distance of every point in observations"""
     x, y = observations.columns  # get predictor and response variable
@@ -211,5 +230,8 @@ def remove_outlier(fvc_hist):
 # TODO: delete this
 if __name__ == "__main__""":
     pd.set_option('display.max_columns', None)
-
+    t = get_initials(get_train_table())
+    print(t.head(5))
+    t = get_predicted_percent(t)
+    print(t.head(30))
 
