@@ -150,7 +150,7 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
     # add base FVC and week, predicted percent columns
     data = table_data.get_initials(data)
     data = table_data.get_predicted_percent(data)
-    
+
     # get exponent coeffs
     for index, row in data.iterrows():
         coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
@@ -235,6 +235,9 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
         coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
         data.loc[index, "Coeff"] = coeff
 
+    # get predicted percent column
+    data = table_data.get_predicted_percent(data)
+
     # remove unused features
     data = data.drop(["Patient_Week", "Confidence"], axis=1)
 
@@ -253,10 +256,4 @@ if __name__ == "__main__":
                                enlarged_model=True,
                                image_size=[512, 512],
                                processor_save_path='models_weights/qreg_model/processor.pickle')
-    pp_test = create_nn_test(table_data.get_test_table(),
-                             pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb')),
-                             cnn_model_path='models_weights/cnn_model/model_v4.ckpt',
-                             enlarged_model=True,
-                             image_size=[512, 512])
     pp_train.to_csv('pp_train.csv', index=False)
-    pp_test.to_csv('pp_test.csv', index=False)
