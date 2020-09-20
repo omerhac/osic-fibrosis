@@ -119,7 +119,13 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
 
     # get submission form format
     submission = test_data[["Patient", "Weeks"]]
-    cnn_preds = test_data["FVC"].values  # for use if we want only the CNN predictions
+
+    # get cnn predictions for later use
+    cnn_preds = test_data["FVC"]
+    processor.inverse_transform(cnn_preds, "FVC")
+    cnn_preds = cnn_preds.values
+
+    # arrange test data
     test_data = test_data.drop(["Patient"], axis=1).astype('float32').values
 
     # get model
