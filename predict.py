@@ -9,7 +9,7 @@ import pickle
 import etl
 
 # images path
-IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-hue/images-hue'
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # image size
 IMAGE_SIZE = (256, 256)
@@ -89,7 +89,8 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
                  exp_gen=None,
                  processor_path='models_weights/qreg_model/processor.pickle',
                  enlarged_model=True,
-                 image_size=IMAGE_SIZE):
+                 image_size=IMAGE_SIZE,
+                 only_cnn=False):
     """Predict test set and generate a submission file.
     Args:
         save_path: where to save predictions
@@ -101,6 +102,8 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
         if its not provided
         processor_path: path to pickled preprocessor for table data
         enlarged_model: a flag whether the provided model at cnn_model_path is enlarged, relevant only if exp_gen=None
+        image_size: feeding image size to the model
+        only_cnn: flag whether to predict only using the CNN model
     """
 
     # get generator
@@ -116,6 +119,7 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
 
     # get submission form format
     submission = test_data[["Patient", "Weeks"]]
+    cnn_preds = test_data["FVC"].values  # for use if we want only the CNN predictions
     test_data = test_data.drop(["Patient"], axis=1).astype('float32').values
 
     # get model
@@ -124,8 +128,11 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
 
     # predict
     preds = model.predict(test_data)
-    submission["FVC"] = preds[:, 1]  # fvc prediction is the median prediction
-    submission["Confidence"] = (preds[:, 2]-preds[:, 0])  # confidence prediction is (top quant - bottom quant)
+
+    # fvc prediction is the median prediction for quantile regression model or the CNN prediction if requested
+    submission["FVC"] = cnn_preds if only_cnn else preds[:, 1]
+    # confidence prediction is top quantile - bottom quantile for quantile regression model or constant 200 if only_cnn
+    submission["Confidence"] = 200 if only_cnn else (preds[:, 2]-preds[:, 0])
 
     # inverse transform weeks
     processor.inverse_transform(submission, "Weeks")
@@ -187,8 +194,10 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
 
 
 if __name__ == '__main__':
-    predict_test('submissions/sub_5.csv',
+    predict_test('submissions/sub_6.csv',
                  table_data.get_test_table(),
                  cnn_model_path='models_weights/cnn_model/model_v4.ckpt',
                  enlarged_model=True,
-                 image_size=[512,512])
+                 image_size=[512,512],
+                 only_cnn=True
+                 )
