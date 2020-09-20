@@ -19,6 +19,7 @@ class TablePreprocessor:
         self._scale_dict["Initial_Week"] = (table["Initial_Week"].min(), table["Initial_Week"].max())
         self._scale_dict["Initial_FVC"] = (table["Initial_FVC"].min(), table["Initial_FVC"].max())
         self._scale_dict["Norm_Week"] = (table["Norm_Week"].min(), table["Norm_Week"].max())
+        self._scale_dict["Predicted_Percent"] = (table["Predicted_Percent"].min(), table["Predicted_Percent"].max())
 
     def normalize_feature(self, table, feature):
         """Min-Max scale a numeric feature in pandas DataFrame"""
@@ -51,6 +52,7 @@ class TablePreprocessor:
         self.normalize_feature(ohe_table, "Initial_Week")
         self.normalize_feature(ohe_table, "Initial_FVC")
         self.normalize_feature(ohe_table, "Norm_Week")
+        self.normalize_feature(ohe_table, "Predicted_Percent")
 
         return ohe_table
 

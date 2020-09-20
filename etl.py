@@ -147,9 +147,10 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
     # predict
     predict.predict_form(exp_dict, data, submission=False)  # this sets the table FVC values to CNN predictions
 
-    # add base FVC and week column
+    # add base FVC and week, predicted percent columns
     data = table_data.get_initials(data)
-
+    data = table_data.get_predicted_percent(data)
+    
     # get exponent coeffs
     for index, row in data.iterrows():
         coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
