@@ -121,7 +121,7 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
     submission = test_data[["Patient", "Weeks"]]
 
     # get cnn predictions for later use
-    cnn_preds = test_data["FVC"]
+    cnn_preds = test_data[["FVC"]]
     processor.inverse_transform(cnn_preds, "FVC")
     cnn_preds = cnn_preds.values
 
