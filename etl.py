@@ -147,9 +147,8 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
     # predict
     predict.predict_form(exp_dict, data, submission=False)  # this sets the table FVC values to CNN predictions
 
-    # add base FVC and week, predicted percent columns
+    # add base FVC and week column
     data = table_data.get_initials(data)
-    data = table_data.get_predicted_percent(data)
 
     # get exponent coeffs
     for index, row in data.iterrows():
@@ -235,9 +234,6 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
         coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
         data.loc[index, "Coeff"] = coeff
 
-    # get predicted percent column
-    data = table_data.get_predicted_percent(data)
-
     # remove unused features
     data = data.drop(["Patient_Week", "Confidence"], axis=1)
 
@@ -256,4 +252,5 @@ if __name__ == "__main__":
                                enlarged_model=True,
                                image_size=[512, 512],
                                processor_save_path='models_weights/qreg_model/processor.pickle')
-    pp_train.to_csv('pp_train.csv', index=False)
+    pp_train.to_csv('theta_data/pp_train.csv', index=False)
+

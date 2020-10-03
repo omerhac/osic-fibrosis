@@ -150,7 +150,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
                                   callbacks=[lr_schedule])
     else:
         history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
-                                  validation_data=(val_x, val_y), shuffle=True, callbacks=[lr_schedule])
+                                  validation_data=(val_x, val_y), shuffle=True)
 
     # save model
     theta_model.save_weights(save_path)
@@ -159,9 +159,10 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 
 if __name__ == '__main__':
-    hist = train_qreg_model('models_weights/qreg_model/model_v3.ckpt', pp_train_data='theta_data/pp_train.csv',
+    hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv',
                             without_validation=False)
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 
 # v3 is good 256 and v4 is good 512
+# qreg v3 is good without predicted percent
