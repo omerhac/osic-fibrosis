@@ -1,10 +1,10 @@
 import pandas as pd
 import pickle as pickle
 import numpy as np
-import etl
 import matplotlib.pyplot as plt
 import metrics
 import predict
+import seaborn as sns
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
@@ -23,24 +23,32 @@ if __name__ == '__main__':
 
     avg_thetas = []
     stds = []
-
+    scores = []
     val_gen = predict.exponent_generator(
-        IMAGES_GCS_PATH + '/validation',
+        IMAGES_GCS_PATH + '/train',
         model_path='models_weights/cnn_model/model_v4.ckpt',
         image_size=[512,512],
         enlarged_model=True,
         yield_std=True
     )
 
+    i = 0
     for id, exp_func, std in val_gen:
         stds.append(std)
-
+        i+=1
         score, avg_theta = metrics.get_lll_value_exp_function(id, exp_func, return_theta=True)
-        print(score)
+        scores.append(score)
+        print("Patient {}:".format(i))
+        print("CNN score: {}".format(score))
+        qreg_score = metrics.metric_check(get_patient=id)
+        print("Qreg score: {}".format(qreg_score))
         avg_thetas.append(avg_theta)
+        if i == 40:
+            break
 
+    print(np.mean(scores))
     # plot
     plt.figure()
-    plt.scatter(stds, avg_thetas)
+    sns.regplot(stds, avg_thetas)
     plt.show()
 

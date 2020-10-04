@@ -78,7 +78,7 @@ def exponent_generator(path, for_test=False,
         avg_coeff = sum(coeff_sum) / n
 
         # get std
-        coeff_std = np.std(coeff_sum)
+        coeff_std = np.std(coeff_sum) / n
 
         # create exponent
         id = patient.numpy().decode('utf-8')

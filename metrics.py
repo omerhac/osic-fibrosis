@@ -6,6 +6,12 @@ import models
 import etl
 import pandas as pd
 import pickle
+import logging
+import os
+
+# mute tf warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
+logging.getLogger('tensorflow').setLevel(logging.FATAL)
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
@@ -88,8 +94,9 @@ def exp_metric_check(exp_gen=None, n_patients=5, infinite=False):
 
 
 def metric_check(qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
-                 processor_path='models_weights/qreg_model/preocessor.pickle',
+                 processor_path='models_weights/qreg_model/processor.pickle',
                  pp_train_path='theta_data/pp_train.csv',
+                 get_patient=None
                  ):
     """
     Copmpute and print quantile regression model score and CNN only model score.
@@ -97,6 +104,7 @@ def metric_check(qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
     :param qreg_model_path: path to quantile regression model weights
     :param processor_path: path to table preprocessor
     :param pp_train_path: path to preprocessed train table
+    :param get_patient: a patient for which to return metric score
     """
 
     dataset = pd.read_csv(pp_train_path)
@@ -108,6 +116,10 @@ def metric_check(qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
 
     train_dataset = dataset.loc[dataset["Patient"].isin(train_ids)]  # get train rows
     val_dataset = dataset.loc[dataset["Patient"].isin(val_ids)]  # get validation rows
+    if get_patient:
+        patient_set = dataset.loc[dataset["Patient"] == get_patient]
+        patient_y = patient_set["GT_FVC"].values
+        patient_x = patient_set.drop(['GT_FVC', 'Patient'], axis=1).values
 
     # split target
     train_y = train_dataset["GT_FVC"].values
@@ -119,19 +131,27 @@ def metric_check(qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
     theta_model = models.get_qreg_model(train_x.shape[1])  # input vector n_dim is n columns
     theta_model.load_weights(qreg_model_path)
 
-    model_preds = theta_model.predict(val_x)
-    theta = model_preds[:, 2] - model_preds[:, 0]
-    preds = model_preds[:, 1]
+    if not get_patient:
+        model_preds = theta_model.predict(val_x)
+        theta = model_preds[:, 2] - model_preds[:, 0]
+        preds = model_preds[:, 1]
 
-    # calculate qreg model score
-    qreg_score = laplace_log_likelihood(val_y, preds, theta)
-    print("Quantile regression model validation score is: {}".format(qreg_score))
+        # calculate qreg model score
+        qreg_score = laplace_log_likelihood(val_y, preds, theta)
+        print("Quantile regression model validation score is: {}".format(qreg_score))
 
-    # calculate cnn model score
-    processor = pickle.load(open(processor_path, 'rb'))
-    processor.inverse_transform(val_dataset, 'FVC')
-    cnn_score = laplace_log_likelihood(val_y, val_dataset["FVC"].values, 80)
-    print("CNN only model validation score based on the preprocessed table is: {}".format(cnn_score))
+        # calculate cnn model score
+        processor = pickle.load(open(processor_path, 'rb'))
+        processor.inverse_transform(val_dataset, 'FVC')
+        cnn_score = laplace_log_likelihood(val_y, val_dataset["FVC"].values, 80)
+        print("CNN only model validation score based on the preprocessed table is: {}".format(cnn_score))
+
+    else:
+        patient_preds = theta_model.predict(patient_x)
+        patient_theta = patient_preds[:, 2] - patient_preds[:, 0]
+        patient_preds = patient_preds[:, 1]
+        patient_score = laplace_log_likelihood(patient_y, patient_preds, patient_theta)
+        return  patient_score
 
 
 # This section is taken from 'https://www.kaggle.com/chrisden/6-82-quantile-reg-lr-schedulers-checkpoints'
