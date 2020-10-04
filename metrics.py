@@ -28,8 +28,14 @@ def laplace_log_likelihood(y_true, y_pred, theta):
     return metric.sum() / len(y_true)
 
 
-def get_lll_value_exp_function(id, exp_function, theta=200):
-    """Return the laplace log likelihood score for a given patient and his exponent function."""
+def get_lll_value_exp_function(id, exp_function, theta=200, return_theta=False):
+    """Return the laplace log likelihood score for a given patient and his exponent function.
+    Args:
+        id: patient id
+        exp_function: patient predicted exponent function
+        theta: theta to be broadcasted across all measurements for the metric
+        return_theta: flag whether to return average optimal theta value
+    """
     hist = table_data.get_fvc_hist(table_data.get_train_table(), id)  # get ground truth
 
     # initiate predictions
@@ -46,7 +52,11 @@ def get_lll_value_exp_function(id, exp_function, theta=200):
 
     # compute_metric
     metric = laplace_log_likelihood(y_true, y_pred, theta)
-    return metric
+
+    if return_theta:
+        return metric, np.mean(np.abs(y_true - y_pred))
+    else:
+        return metric
 
 
 def exp_metric_check(exp_gen=None, n_patients=5, infinite=False):
@@ -120,7 +130,7 @@ def metric_check(qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
     # calculate cnn model score
     processor = pickle.load(open(processor_path, 'rb'))
     processor.inverse_transform(val_dataset, 'FVC')
-    cnn_score = laplace_log_likelihood(val_y, val_dataset["FVC"].values, 200)
+    cnn_score = laplace_log_likelihood(val_y, val_dataset["FVC"].values, 80)
     print("CNN only model validation score based on the preprocessed table is: {}".format(cnn_score))
 
 

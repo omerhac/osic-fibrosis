@@ -39,7 +39,8 @@ class ExpFunc:
 def exponent_generator(path, for_test=False,
                        model_path='models_weights/cnn_model/model_v3.ckpt',
                        image_size=IMAGE_SIZE,
-                       enlarged_model=False):
+                       enlarged_model=False,
+                       yield_std=False):
     """Create a generator which returns exponent function for patients whose images are at path.
     Take a dataset of patient directories. Generate an exponent coefficient describing
     FVC progression for each patient CT image. Average those coefficients and return an
@@ -51,6 +52,7 @@ def exponent_generator(path, for_test=False,
         model_path--path to models_weights
         enlarged_model-- flag whether its an enlarged model
         image_size-- common size to resize images before feeding to the predicting model
+        yield_std-- flag whether to yield also the coeff standard deviation
     """
 
     image_dataset = image_data.get_images_dataset_by_id(path, image_size=image_size)
@@ -65,22 +67,28 @@ def exponent_generator(path, for_test=False,
     # iterate threw every patient
     for patient, images in image_dataset:
         images = images.map(image_data.normalize_image).batch(1)  # normalize images, batch for model digestion
-        coeff_sum = 0  # maintain sum
+        coeff_sum = []  # maintain sum
         # iterate threw every image
         for n, image in enumerate(images):
             # predict exponent
             exp_coeff = network.predict(image)[0][0]
-            coeff_sum += exp_coeff
+            coeff_sum.append(exp_coeff)
 
         # average predictions
-        avg_coeff = coeff_sum / n
+        avg_coeff = sum(coeff_sum) / n
+
+        # get std
+        coeff_std = np.std(coeff_sum)
 
         # create exponent
         id = patient.numpy().decode('utf-8')
         initial_week, initial_fvc = table_data.get_initial_fvc(id, for_test=for_test)
         exp_func = ExpFunc(initial_fvc, avg_coeff, initial_week)  # create exponent function
 
-        yield id, exp_func
+        if yield_std:
+            yield id, exp_func, coeff_std
+        else:
+            yield id, exp_func
 
 
 def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
