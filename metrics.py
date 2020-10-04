@@ -143,7 +143,7 @@ def metric_check(qreg_model_path='models_weights/qreg_model/model_v3.ckpt',
         # calculate cnn model score
         processor = pickle.load(open(processor_path, 'rb'))
         processor.inverse_transform(val_dataset, 'FVC')
-        cnn_score = laplace_log_likelihood(val_y, val_dataset["FVC"].values, 80)
+        cnn_score = laplace_log_likelihood(val_y, val_dataset["FVC"].values, 180)
         print("CNN only model validation score based on the preprocessed table is: {}".format(cnn_score))
 
     else:

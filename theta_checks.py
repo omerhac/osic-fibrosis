@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # inverse transform FVC
     processor.inverse_transform(pp_train, 'FVC')
     pp_train['Theta'] = np.abs(pp_train['FVC'] - pp_train["GT_FVC"])
-
+    pp_train['']
     print("Average optimal theta: {}".format(pp_train['Theta'].mean()))
 
     avg_thetas = []

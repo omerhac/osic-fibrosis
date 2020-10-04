@@ -251,16 +251,16 @@ def add_norm_std(df, exp_gen_with_std):
     exp_dict = {id: std for id, _, std in exp_gen_with_std}
 
     new_df = df.copy()
-    for index, row in new_df.itterows():
+    for index, row in new_df.iterrows():
         id = row['Patient']
         new_df.loc[index, "STD"] = exp_dict[id]
 
     # get min, max
-    min = new_df[:, "STD"].min()
-    max = new_df[:, "STD"].max()
+    min = new_df.loc[:, "STD"].min()
+    max = new_df.loc[:, "STD"].max()
 
     # normalize
-    new_df.loc[:, "STD"] = (new_df[:, "STD"] - min) / (max - min)
+    new_df.loc[:, "STD"] = (new_df.loc[:, "STD"] - min) / (max - min)
 
     return new_df
 
@@ -268,13 +268,20 @@ def add_norm_std(df, exp_gen_with_std):
 if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
     pp_train = pd.read_csv('theta_data/pp_train.csv')
-    exp_gen_with_std = predict.exponent_generator(
+    train_gen = predict.exponent_generator(
+        IMAGES_GCS_PATH + '/train',
+        model_path='models_weights/cnn_model/model_v4.ckpt',
+        image_size=[512, 512],
+        enlarged_model=True,
+        yield_std=True
+    )
+    val_gen = predict.exponent_generator(
         IMAGES_GCS_PATH + '/validation',
         model_path='models_weights/cnn_model/model_v4.ckpt',
         image_size=[512, 512],
         enlarged_model=True,
         yield_std=True
     )
-    pp_train_std = add_norm_std(pp_train, exp_gen_with_std)
+    pp_train_std = add_norm_std(pp_train, chain(train_gen, val_gen))
     pp_train_std.to_csv('theta_data/pp_train_std.csv')
 

@@ -4,6 +4,11 @@ import tensorflow as tf
 import visualize
 import pandas as pd
 import numpy as np
+import metrics
+import predict
+
+# images path
+IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # CNN Constants
 CNN_EPOCHS = 20
@@ -13,7 +18,7 @@ CNN_IMAGE_SIZE = (256, 256)
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Theta constants
-THETA_EPOCHS = 1500
+THETA_EPOCHS = 1550
 THETA_BATCH_SIZE = 256
 THETA_STEPS_PER_EPOCH = 32994 // THETA_BATCH_SIZE
 
@@ -120,6 +125,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
         dataset = etl.create_nn_train(model_path=cnn_model_path)
     else:
         dataset = pd.read_csv(pp_train_data)
+
     train_ids, val_ids = etl.get_train_val_split()
 
     # cast dtypes
@@ -158,10 +164,33 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
     return history.history
 
 
+def get_hard_patients(exp_gen, n_patients=5, threshold=-6.8):
+    """Return n_patients for which metric is lower then threshold"""
+    hard_patients = []
+
+    for id, exp_func in exp_gen:
+        score = metrics.get_lll_value_exp_function(id, exp_func)
+
+        if score < threshold:
+            hard_patients.append(id)
+            print(score)
+
+        # exit rule
+        if len(hard_patients) == n_patients:
+            break
+
+    return hard_patients
+
+
 if __name__ == '__main__':
-    #hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv',
-    #                        without_validation=False)
-    hist = train_cnn_model('models_weights/cnn_model/model_v5.ckpt')
+    exp_gen = predict.exponent_generator(
+        IMAGES_GCS_PATH + '/train',
+        model_path='models_weights/cnn_model/model_v4.ckpt',
+        image_size=[512,512],
+        enlarged_model=True
+    )
+    ids = get_hard_patients(exp_gen)
+    print(ids)
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 
