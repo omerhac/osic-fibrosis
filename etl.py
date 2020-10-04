@@ -246,11 +246,35 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
     return data
 
 
+def add_norm_std(df, exp_gen_with_std):
+    """Add normalized std column to a dataframe"""
+    exp_dict = {id: std for id, _, std in exp_gen_with_std}
+
+    new_df = df.copy()
+    for index, row in new_df.itterows():
+        id = row['Patient']
+        new_df.loc[index, "STD"] = exp_dict[id]
+
+    # get min, max
+    min = new_df[:, "STD"].min()
+    max = new_df[:, "STD"].max()
+
+    # normalize
+    new_df.loc[:, "STD"] = (new_df[:, "STD"] - min) / (max - min)
+
+    return new_df
+
+
 if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
-    pp_train = create_nn_train(model_path='models_weights/cnn_model/model_v4.ckpt',
-                               enlarged_model=True,
-                               image_size=[512, 512],
-                               processor_save_path='models_weights/qreg_model/processor.pickle')
-    pp_train.to_csv('theta_data/pp_train.csv', index=False)
+    pp_train = pd.read_csv('theta_data/pp_train.csv')
+    exp_gen_with_std = predict.exponent_generator(
+        IMAGES_GCS_PATH + '/validation',
+        model_path='models_weights/cnn_model/model_v4.ckpt',
+        image_size=[512, 512],
+        enlarged_model=True,
+        yield_std=True
+    )
+    pp_train_std = add_norm_std(pp_train, exp_gen_with_std)
+    pp_train_std.to_csv('theta_data/pp_train_std.csv')
 

@@ -17,9 +17,7 @@ if __name__ == '__main__':
     processor.inverse_transform(pp_train, 'FVC')
     pp_train['Theta'] = np.abs(pp_train['FVC'] - pp_train["GT_FVC"])
 
-    print(pp_train['Theta'].mean())
-    print(pp_train['Theta'].max())
-    print(pp_train['Theta'].argmax())
+    print("Average optimal theta: {}".format(pp_train['Theta'].mean()))
 
     avg_thetas = []
     stds = []
@@ -46,7 +44,7 @@ if __name__ == '__main__':
         if i == 40:
             break
 
-    print(np.mean(scores))
+    print("AVRG CNN SCRORE: {}".format(np.mean(scores)))
     # plot
     plt.figure()
     sns.regplot(stds, avg_thetas)

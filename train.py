@@ -18,7 +18,7 @@ THETA_BATCH_SIZE = 256
 THETA_STEPS_PER_EPOCH = 32994 // THETA_BATCH_SIZE
 
 
-def train_cnn_model(save_path, load_path=None, enlarge_model=False, ):
+def train_cnn_model(save_path, load_path=None, enlarge_model=False):
     """Train the CNN model. Save weights to models_weights/cnn_model. Return history dict
         Arguments:
             save_path: where to save the model
@@ -159,8 +159,9 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
 
 if __name__ == '__main__':
-    hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv',
-                            without_validation=False)
+    #hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv',
+    #                        without_validation=False)
+    hist = train_cnn_model('models_weights/cnn_model/model_v5.ckpt')
     visualize.plot_training_curves(hist)
     pd.set_option('display.max_columns', None)
 

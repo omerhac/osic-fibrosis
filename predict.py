@@ -77,7 +77,7 @@ def exponent_generator(path, for_test=False,
         # average predictions
         avg_coeff = sum(coeff_sum) / n
 
-        # get std
+        # get normalized std
         coeff_std = np.std(coeff_sum) / n
 
         # create exponent
