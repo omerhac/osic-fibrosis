@@ -11,7 +11,7 @@ from LargestValuesHolder import LargestValuesHolder
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
 # CNN Constants
-CNN_EPOCHS = 20
+CNN_EPOCHS = 10
 CNN_BATCH_SIZE = 16
 CNN_STEPS_PER_EPOCH = 32994 // CNN_BATCH_SIZE
 CNN_IMAGE_SIZE = (256, 256)
@@ -71,6 +71,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
     optimizer = tf.optimizers.Adam()
 
     # train operation
+    @tf.function
     def train_op(x, y):
         """Helper function to compute loss, gradients and train the network. Return loss scalar"""
         with tf.GradientTape() as tape:
@@ -81,7 +82,15 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
         # train
         optimizer.apply_gradients(zip(grads, network.trainable_variables))
 
-        return np.mean(loss.numpy())
+        return loss
+
+    # validation operation
+    @tf.function
+    def val_op(x, y):
+        """Helper function to evaluate the network on x and y"""
+        preds = network(x, training=False)
+        loss = tf.keras.losses.MSE(y, preds)
+        return loss
 
     # initialize accumulators
     train_losses = []
@@ -94,10 +103,14 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
     for batch_x, batch_y in train_dataset:
         # print epoch
         if step % CNN_STEPS_PER_EPOCH == 0:
-            print("EPOCH {}/{}".format(step // CNN_STEPS_PER_EPOCH + 1, CNN_EPOCHS))
+            epoch = step // CNN_STEPS_PER_EPOCH + 1
+            if epoch > CNN_EPOCHS:
+                break
+            else:
+                print("EPOCH {}/{}".format(epoch, CNN_EPOCHS))
 
         # train network and get loss
-        loss = train_op(batch_x, batch_y)
+        loss = np.mean(train_op(batch_x, batch_y).numpy())
 
         # try adding batch to hardest examples
         hardest_examples.add_item((batch_x, batch_y), loss)
@@ -118,10 +131,9 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
         if step % CNN_STEPS_PER_EPOCH == 0:
             val_losses = []
             for val_batch_x, val_batch_y in val_dataset:
-                val_preds = network(val_batch_x, training=False)
-                val_loss = tf.keras.losses.MSE(val_batch_y, val_preds)
-                val_losses.append(np.mean(val_loss.numpy()))
-            print("---Validation loss {:.5e}---".format(np.mean(val_losses)))
+                val_loss = np.mean(val_op(val_batch_x, val_batch_y).numpy())
+                val_losses.append(val_loss)
+            print("---Validation loss {:.5e}---".format(val_loss))
 
             # add losses
             train_losses.append(loss)
