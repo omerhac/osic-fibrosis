@@ -68,6 +68,11 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
     # define optimizer
     optimizer = tf.optimizers.Adam()
     step = 0
+
+    # accumulate losses
+    train_losses = []
+    validation_losses = []
+
     # training loop
     for batch_x, batch_y in train_dataset:
         # print epoch
@@ -77,7 +82,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
         # compute loss and grads
         with tf.GradientTape() as tape:
             preds = network(batch_x, training=True)
-            loss = tf.losses.MSE(batch_y, preds)
+            loss = tf.keras.losses.MSE(batch_y, preds)
             grads = tape.gradient(loss, network.trainable_variables)
 
         # apply gradientes
@@ -85,7 +90,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
 
         # print step
         if (step % CNN_STEPS_PER_EPOCH) % 100 == 0:
-            print("Step {}/{}, loss {}".format(step % CNN_STEPS_PER_EPOCH, CNN_STEPS_PER_EPOCH, np.mean(loss.numpy())))
+            print("Step {}/{}, loss {:.5e}".format(step % CNN_STEPS_PER_EPOCH, CNN_STEPS_PER_EPOCH, np.mean(loss.numpy())))
 
         # update step
         step = optimizer.iterations.numpy()
@@ -95,9 +100,13 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
             val_losses = []
             for val_batch_x, val_batch_y in val_dataset:
                 val_preds = network(val_batch_x, training=False)
-                val_loss = tf.losses.MSE(val_batch_y, val_preds)
+                val_loss = tf.keras.losses.MSE(val_batch_y, val_preds)
                 val_losses.append(np.mean(val_loss.numpy()))
-            print("---Validation loss {}---".format(np.mean(val_losses)))
+            print("---Validation loss {:.5e}---".format(np.mean(val_losses)))
+
+            # add losses
+            train_losses.append(np.mean(loss.numpy()))
+            validation_losses.append((np.mean(val_losses)))
 
     # save model
     network.save_weights(save_path)
@@ -212,5 +221,6 @@ def get_hard_patients(exp_gen, n_patients=5, threshold=-6.8):
 
 if __name__ == '__main__':
     hist = train_cnn_model('models_weights/cnn_model/model_v5.ckpt')
+
 # v3 is good 256 and v4 is good 512
 # qreg v3 is good without predicted percent
