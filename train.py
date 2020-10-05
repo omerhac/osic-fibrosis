@@ -39,6 +39,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
     val_dataset = etl.get_tfrecord_dataset(image_size=image_size, type='validation')
 
     # batch and repeat dataset
+    train_dataset = train_dataset.shuffle(buffer_size=CNN_BATCH_SIZE)
     train_dataset = train_dataset.repeat()
     train_dataset = train_dataset.batch(CNN_BATCH_SIZE)
     val_dataset = val_dataset.batch(CNN_BATCH_SIZE)
@@ -62,14 +63,41 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
     # add callbacks
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_mse', mode='auto',
                                                       restore_best_weights=True, patience=5, verbose=1)
-    lr_schedule = get_lr_callback(batch_size=CNN_BATCH_SIZE,
-                                  epochs=CNN_EPOCHS,
-                                  lr_start=0.0005, plot=False)  # needed only for transfer learning
     callback_list = [early_stopping]
 
-    # train
-    history = network.fit(train_dataset, epochs=CNN_EPOCHS, steps_per_epoch=CNN_STEPS_PER_EPOCH,
-                          batch_size=CNN_BATCH_SIZE, validation_data=val_dataset, callbacks=callback_list)
+    # define optimizer
+    optimizer = tf.optimizers.Adam()
+    step = 0
+    # training loop
+    for batch_x, batch_y in train_dataset:
+        # print epoch
+        if step % CNN_STEPS_PER_EPOCH == 0:
+            print("EPOCH {}/{}".format(step // CNN_STEPS_PER_EPOCH + 1, CNN_EPOCHS))
+
+        # compute loss and grads
+        with tf.GradientTape() as tape:
+            preds = network(batch_x, training=True)
+            loss = tf.losses.MSE(batch_y, preds)
+            grads = tape.gradient(loss, network.trainable_variables)
+
+        # apply gradientes
+        optimizer.apply_gradients(zip(grads, network.trainable_variables))
+
+        # print step
+        if (step % CNN_STEPS_PER_EPOCH) % 100 == 0:
+            print("Step {}/{}, loss {}".format(step % CNN_STEPS_PER_EPOCH, CNN_STEPS_PER_EPOCH, np.mean(loss.numpy())))
+
+        # update step
+        step = optimizer.iterations.numpy()
+
+        # eval on validation data
+        if step % CNN_STEPS_PER_EPOCH == 0:
+            val_losses = []
+            for val_batch_x, val_batch_y in val_dataset:
+                val_preds = network(val_batch_x, training=False)
+                val_loss = tf.losses.MSE(val_batch_y, val_preds)
+                val_losses.append(np.mean(val_loss.numpy()))
+            print("---Validation loss {}---".format(np.mean(val_losses)))
 
     # save model
     network.save_weights(save_path)
@@ -183,7 +211,6 @@ def get_hard_patients(exp_gen, n_patients=5, threshold=-6.8):
 
 
 if __name__ == '__main__':
-    pass
-
+    hist = train_cnn_model('models_weights/cnn_model/model_v5.ckpt')
 # v3 is good 256 and v4 is good 512
 # qreg v3 is good without predicted percent

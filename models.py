@@ -60,7 +60,6 @@ def get_sqeezenet_model(image_size=IMAGE_SIZE):
 
     # compile
     model = tf.keras.Model(x, dense_out)
-    model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
     return model
 
