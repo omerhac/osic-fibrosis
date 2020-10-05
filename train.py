@@ -126,7 +126,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
             validation_losses.append((np.mean(val_losses)))
 
             # train on hardest examples
-            print("---Training on hardest {} exmaples...---""".format(HARDEST_EXAMPLES))
+            print("Training on hardest {} exmaples...""".format(HARDEST_EXAMPLES))
             for hard_x, hard_y in hardest_examples.get_items():
                 _ = train_op(hard_x, hard_y)
 
@@ -135,7 +135,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
     # save model
     network.save_weights(save_path)
 
-    return history.history
+    return {'loss': train_losses, 'val_loss': validation_losses}
 
 
 def get_lr_callback(batch_size=64, plot=False, epochs=50, lr_start=0.0001, lr_min=0.00001):
