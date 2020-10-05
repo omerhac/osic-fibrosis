@@ -108,7 +108,6 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
 
     # add resizing capability
     read_tfrecord_and_resize = lambda example: tf_record_writer.read_tfrecord(example, image_size=image_size)
-
     train_dataset = train_dataset.map(read_tfrecord_and_resize, num_parallel_calls=AUTO)
 
     return train_dataset

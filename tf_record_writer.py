@@ -99,7 +99,7 @@ def write_tfrecords(type='train'):
             print("Wrote file {} containing {} records".format(filename, shard_size))
 
 
-def read_tfrecord(example, image_size=IMAGE_SIZE):
+def read_tfrecord(example, image_size=IMAGE_SIZE, return_id=False):
     features = {
         "image": tf.io.FixedLenFeature([], tf.string),  # tf.string = bytestring (not text string)
         "id": tf.io.FixedLenFeature([], tf.string),
@@ -123,7 +123,10 @@ def read_tfrecord(example, image_size=IMAGE_SIZE):
     # get polynomial coeffs
     exp_coeff = example['coeff']
 
-    return image, exp_coeff  # TODO: ADD ID TO RETURN
+    if return_id:
+        return id, image, exp_coeff
+    else:
+        return image, exp_coeff
 
 
 if __name__ == '__main__':

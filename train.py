@@ -183,16 +183,7 @@ def get_hard_patients(exp_gen, n_patients=5, threshold=-6.8):
 
 
 if __name__ == '__main__':
-    exp_gen = predict.exponent_generator(
-        IMAGES_GCS_PATH + '/train',
-        model_path='models_weights/cnn_model/model_v4.ckpt',
-        image_size=[512,512],
-        enlarged_model=True
-    )
-    ids = get_hard_patients(exp_gen)
-    print(ids)
-    visualize.plot_training_curves(hist)
-    pd.set_option('display.max_columns', None)
+    pass
 
 # v3 is good 256 and v4 is good 512
 # qreg v3 is good without predicted percent
