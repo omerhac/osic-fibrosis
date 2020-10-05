@@ -23,12 +23,14 @@ THETA_BATCH_SIZE = 256
 THETA_STEPS_PER_EPOCH = 32994 // THETA_BATCH_SIZE
 
 
-def train_cnn_model(save_path, load_path=None, enlarge_model=False):
+def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_examples_training=False):
     """Train the CNN model. Save weights to models_weights/cnn_model. Return history dict
         Arguments:
             save_path: where to save the model
             load_path: path to load pretrained model checkpoint
             enlarge_model: flag whether to train en enlarged cnn model
+            hard_examples_training: flag whether to train the model on the HARDEST_EXAMPLES examples again after each
+            epoch.
     """
 
     # get image size
@@ -106,7 +108,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
                 step % CNN_STEPS_PER_EPOCH,
                 CNN_STEPS_PER_EPOCH,
                 loss,
-                hardest_examples.get_max_value()
+                hardest_examples.get_max_value() # check max loss during last epoch
             ))
 
         # update step
@@ -126,11 +128,12 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
             validation_losses.append((np.mean(val_losses)))
 
             # train on hardest examples
-            print("Training on hardest {} exmaples...""".format(HARDEST_EXAMPLES))
-            for hard_x, hard_y in hardest_examples.get_items():
-                _ = train_op(hard_x, hard_y)
+            if hard_examples_training:
+                print("Training on hardest {} exmaples...""".format(HARDEST_EXAMPLES))
+                for hard_x, hard_y in hardest_examples.get_items():
+                    _ = train_op(hard_x, hard_y)
 
-            hardest_examples = LargestValuesHolder(n_elements=HARDEST_EXAMPLES)
+                hardest_examples = LargestValuesHolder(n_elements=HARDEST_EXAMPLES)
 
     # save model
     network.save_weights(save_path)
