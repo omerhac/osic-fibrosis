@@ -3,13 +3,13 @@ class LargestValuesHolder:
     A data structure to hold n elements with the largest metric values.
     """
 
-    def __init__(self, n_values=10):
+    def __init__(self, n_elements=10):
         self._metric_values = {}
         self._elements = {}
         self._min_idx = 0
 
         # init metrics with 0s and elements with None
-        for i in range(n_values):
+        for i in range(n_elements):
             self._metric_values[i] = 0
             self._elements[i] = None
 
@@ -41,6 +41,14 @@ class LargestValuesHolder:
     def get_items(self):
         """Return n highest scoring elements"""
         return list(self._elements.values())
+
+    def get_max_value(self):
+        """Return the maximum metric value"""
+        max_idx = 0
+        for key in self._metric_values.keys():
+            if self._metric_values[key] > self._metric_values[max_idx]:
+                max_idx = key
+        return self._metric_values[max_idx]
 
 
 if __name__ == '__main__':

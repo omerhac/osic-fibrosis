@@ -5,7 +5,7 @@ import visualize
 import pandas as pd
 import numpy as np
 import metrics
-import predict
+from LargestValuesHolder import LargestValuesHolder
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
@@ -67,11 +67,26 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
 
     # define optimizer
     optimizer = tf.optimizers.Adam()
-    step = 0
 
-    # accumulate losses
+    # train operation
+    def train_op(x, y):
+        """Helper function to compute loss, gradients and train the network. Return loss scalar"""
+        with tf.GradientTape() as tape:
+            preds = network(x, training=True)
+            loss = tf.keras.losses.MSE(y, preds)
+            grads = tape.gradient(loss, network.trainable_variables)
+
+        # train
+        optimizer.apply_gradients(zip(grads, network.trainable_variables))
+
+        return np.mean(loss.numpy())
+
+    # initialize accumulators
     train_losses = []
     validation_losses = []
+    step = 0
+    HARDEST_EXAMPLES = 200
+    hardest_examples = LargestValuesHolder(n_elements=HARDEST_EXAMPLES)
 
     # training loop
     for batch_x, batch_y in train_dataset:
@@ -79,18 +94,20 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
         if step % CNN_STEPS_PER_EPOCH == 0:
             print("EPOCH {}/{}".format(step // CNN_STEPS_PER_EPOCH + 1, CNN_EPOCHS))
 
-        # compute loss and grads
-        with tf.GradientTape() as tape:
-            preds = network(batch_x, training=True)
-            loss = tf.keras.losses.MSE(batch_y, preds)
-            grads = tape.gradient(loss, network.trainable_variables)
+        # train network and get loss
+        loss = train_op(batch_x, batch_y)
 
-        # apply gradientes
-        optimizer.apply_gradients(zip(grads, network.trainable_variables))
+        # try adding batch to hardest examples
+        hardest_examples.add_item((batch_x, batch_y), loss)
 
         # print step
         if (step % CNN_STEPS_PER_EPOCH) % 100 == 0:
-            print("Step {}/{}, loss {:.5e}".format(step % CNN_STEPS_PER_EPOCH, CNN_STEPS_PER_EPOCH, np.mean(loss.numpy())))
+            print("Step {}/{}, current loss {:.5e}, highest loss {:.5e}".format(
+                step % CNN_STEPS_PER_EPOCH,
+                CNN_STEPS_PER_EPOCH,
+                loss,
+                hardest_examples.get_max_value()
+            ))
 
         # update step
         step = optimizer.iterations.numpy()
@@ -105,8 +122,15 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False):
             print("---Validation loss {:.5e}---".format(np.mean(val_losses)))
 
             # add losses
-            train_losses.append(np.mean(loss.numpy()))
+            train_losses.append(loss)
             validation_losses.append((np.mean(val_losses)))
+
+            # train on hardest examples
+            print("---Training on hardest {} exmaples...---""".format(HARDEST_EXAMPLES))
+            for hard_x, hard_y in hardest_examples.get_items():
+                _ = train_op(hard_x, hard_y)
+
+            hardest_examples = LargestValuesHolder(n_elements=HARDEST_EXAMPLES)
 
     # save model
     network.save_weights(save_path)
