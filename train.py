@@ -7,6 +7,7 @@ import numpy as np
 import metrics
 from LargestValuesHolder import LargestValuesHolder
 
+
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
 
@@ -70,6 +71,14 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
     # define optimizer
     optimizer = tf.optimizers.Adam()
 
+    # custom training loop doesnt work for some reason on an enlarged model...
+    if not hard_examples_training:
+        network.compile(optimizer='adam', loss='mse')
+        hist = network.fit(train_dataset, validation_data=val_dataset, epochs=CNN_EPOCHS, steps_per_epoch=CNN_STEPS_PER_EPOCH,
+                           callbacks=callback_list)
+        return hist.history()
+
+    # go threw custom training loop:
     # train operation
     @tf.function
     def train_op(x, y):
@@ -141,12 +150,13 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
 
             # train on hardest examples
             if hard_examples_training:
-                print("Training on hardest {} exmaples...""".format(HARDEST_EXAMPLES))
+                print("Training on hardest {} examples...""".format(HARDEST_EXAMPLES))
                 for hard_x, hard_y in hardest_examples.get_items():
-                    _ = train_op(hard_x, hard_y)
+                  _ = train_op(hard_x, hard_y)
 
                 hardest_examples = LargestValuesHolder(n_elements=HARDEST_EXAMPLES)
 
+    print("### Training finished ###")
     # save model
     network.save_weights(save_path)
 
@@ -259,7 +269,8 @@ def get_hard_patients(exp_gen, n_patients=5, threshold=-6.8):
 
 
 if __name__ == '__main__':
-    hist = train_cnn_model('models_weights/cnn_model/model_v5.ckpt')
+    hist = train_cnn_model('models_weights/cnn_model/model_v7.ckpt', load_path='models_weights/cnn_model/model_v6.ckpt',
+                           enlarge_model=True, hard_examples_training=False)
 
-# v3 is good 256 and v4 is good 512
-# qreg v3 is good without predicted percent
+
+# v6 is good 256x256

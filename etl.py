@@ -130,29 +130,12 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
     # remove patient with corrupted images
     data = data[data["Patient"] != 'ID00011637202177653955184']
 
-    # get predictions on train and val set
+    # set FVC column to GT_FVC
     data["GT_FVC"] = data["FVC"]
-    train_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/train', model_path=model_path,
-                                               for_test=False,
-                                               enlarged_model=enlarged_model,
-                                               image_size=image_size)  # train gen
-    val_exp_gen = predict.exponent_generator(IMAGES_GCS_PATH + '/validation', model_path=model_path,
-                                             for_test=False,
-                                             enlarged_model=enlarged_model,
-                                             image_size=image_size)  # validation gen
-
-    exp_dict = {id: exp_func for id, exp_func in chain(train_exp_gen, val_exp_gen)}  # get exponential functions dict
-
-    # predict
-    predict.predict_form(exp_dict, data, submission=False)  # this sets the table FVC values to CNN predictions
+    data = data.drop(["FVC"], axis=1)
 
     # add base FVC and week column
     data = table_data.get_initials(data)
-
-    # get exponent coeffs
-    for index, row in data.iterrows():
-        coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
-        data.loc[index, "Coeff"] = coeff
 
     # preprocess
     processor = TablePreprocessor()

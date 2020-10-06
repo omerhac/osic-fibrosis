@@ -6,7 +6,7 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Input, Ma
 
 # Constants
 IMAGE_SIZE = [256, 256]
-_lambda = 0.85
+_lambda = 0.8
 
 
 def fire_module(x, num_squeeze_filters, num_expand_filters, bnmoment=0.9):
@@ -71,18 +71,18 @@ def get_qreg_model(input_shape):
     inp = Input(shape=input_shape)
 
     # dense layers
-    d1 = Dense(128, activation='relu')(inp)
-    d2 = Dense(128, activation='relu')(d1)
+    d1 = Dense(100, activation='relu')(inp)
+    d2 = Dense(100, activation='relu')(d1)
 
     # quantile predictions
-    pred1 = Dense(3, activation='relu')(d2)
-    pred2 = Dense(3, activation='linear')(d2)  # adjusting predictions
+    pred1 = Dense(3, activation='linear')(d2)
+    pred2 = Dense(3, activation='relu')(d2)  # adjusting predictions
     # this is somehow making the model more robust
     quantiles = tf.keras.layers.Lambda(lambda x: x[0] + tf.cumsum(x[1], axis=1))([pred1, pred2])
 
     # compile
     model = tf.keras.Model(inp, quantiles)
-    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
+    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.01, amsgrad=False),
                   loss=metrics.mloss(_lambda), metrics=metrics.score)
 
     return model
@@ -109,8 +109,6 @@ def enlarge_cnn_model(model_path=None):
         Conv2D(3, kernel_size=(7, 7), strides=(2, 2), activation='relu', padding='same'),
         prior
     ])
-
-    model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
     return model
 
