@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import metrics
 from LargestValuesHolder import LargestValuesHolder
+from sklearn.model_selection import KFold
 
 
 # images path
@@ -194,13 +195,14 @@ def get_lr_callback(batch_size=64, plot=False, epochs=50, lr_start=0.0001, lr_mi
         return lr_scheduler
 
 
-def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v2.ckpt',
-                     pp_train_data=None, without_validation=False):
+def train_qreg_model(save_path,
+                     pp_train_data=None,
+                     without_validation=False):
 
     """Train the theta predicting model. Save weights to models_weights/qreg_model. Return history dict.
     Args:
         save_path: path to save model weights
-        cnn_model_path: path to CNN model weights. Used to predict the train data. Only needed if train data isn't
+
         provided.
         pp_train_data: optional preprocessed train data. Will create it if not provided.
         without_validation: a flag to order training on the whole training set without validation.
@@ -208,7 +210,7 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
 
     # get datasets
     if not pp_train_data:
-        dataset = etl.create_nn_train(model_path=cnn_model_path)
+        dataset = etl.create_nn_train('models_weights/qreg_model/processor.pickle')
     else:
         dataset = pd.read_csv(pp_train_data)
 
@@ -241,6 +243,8 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
                                   epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE, shuffle=True,
                                   callbacks=[lr_schedule])
     else:
+        kfold_splitter = KFold(n_splits=5)  # validation splitter
+
         history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
                                   validation_data=(val_x, val_y), shuffle=True)
 
@@ -250,27 +254,8 @@ def train_qreg_model(save_path, cnn_model_path='models_weights/cnn_model/model_v
     return history.history
 
 
-def get_hard_patients(exp_gen, n_patients=5, threshold=-6.8):
-    """Return n_patients for which metric is lower then threshold"""
-    hard_patients = []
-
-    for id, exp_func in exp_gen:
-        score = metrics.get_lll_value_exp_function(id, exp_func)
-
-        if score < threshold:
-            hard_patients.append(id)
-            print(score)
-
-        # exit rule
-        if len(hard_patients) == n_patients:
-            break
-
-    return hard_patients
-
-
 if __name__ == '__main__':
-    hist = train_cnn_model('models_weights/cnn_model/model_v7.ckpt', load_path='models_weights/cnn_model/model_v6.ckpt',
-                           enlarge_model=True, hard_examples_training=False)
+    hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv')
 
 
 # v6 is good 256x256

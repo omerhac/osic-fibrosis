@@ -113,16 +113,10 @@ def get_tfrecord_dataset(image_size=IMAGE_SIZE, type='train'):
     return train_dataset
 
 
-def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
-                    processor_save_path=None,
-                    enlarged_model=False,
-                    image_size=IMAGE_SIZE):
+def create_nn_train(processor_save_path=None):
     """Create NN train table for finding optimal theta.
     Args:
-        model_path: path to CNN model weights to predict the fvc for each week
         processor_save_path: path to save pickled preprocessor
-        enlarged_model: flag whether the provided model is an enlarged one
-        image_size: feeding image size to the cnn model
     """
 
     data = table_data.get_train_table()
@@ -132,10 +126,10 @@ def create_nn_train(model_path='models_weights/cnn_model/model_v3.ckpt',
 
     # set FVC column to GT_FVC
     data["GT_FVC"] = data["FVC"]
-    data = data.drop(["FVC"], axis=1)
 
     # add base FVC and week column
     data = table_data.get_initials(data)
+    data = data.drop(["FVC"], axis=1)
 
     # preprocess
     processor = TablePreprocessor()
@@ -211,11 +205,6 @@ def create_nn_test(test_table, processor, test_images_path=IMAGES_GCS_PATH + '/t
     # get norm weeks column
     data["Norm_Week"] = data["Weeks"] - data["Initial_Week"]
 
-    # get exponent coeffs
-    for index, row in data.iterrows():
-        coeff = exp_dict[row["Patient"]].get_coeff()  # get the exponential coeff of every patient
-        data.loc[index, "Coeff"] = coeff
-
     # remove unused features
     data = data.drop(["Patient_Week", "Confidence"], axis=1)
 
@@ -249,21 +238,10 @@ def add_norm_std(df, exp_gen_with_std):
 
 if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
-    pp_train = pd.read_csv('theta_data/pp_train.csv')
-    train_gen = predict.exponent_generator(
-        IMAGES_GCS_PATH + '/train',
-        model_path='models_weights/cnn_model/model_v4.ckpt',
-        image_size=[512, 512],
-        enlarged_model=True,
-        yield_std=True
-    )
-    val_gen = predict.exponent_generator(
-        IMAGES_GCS_PATH + '/validation',
-        model_path='models_weights/cnn_model/model_v4.ckpt',
-        image_size=[512, 512],
-        enlarged_model=True,
-        yield_std=True
-    )
-    pp_train_std = add_norm_std(pp_train, chain(train_gen, val_gen))
-    pp_train_std.to_csv('theta_data/pp_train_std.csv')
+    pp_test = create_nn_test(table_data.get_test_table(),
+                             pickle.load(open('models_weights/qreg_model/processor.pickle', 'rb')),
+                             test_images_path=IMAGES_GCS_PATH + '/test',
+                             cnn_model_path='models_weights/cnn_model/model_v6.ckpt',
+                             image_size=[256, 256])
+    pp_test.to_csv('theta_data/pp_test.csv', index=False)
 
