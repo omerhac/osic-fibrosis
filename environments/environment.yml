@@ -1,12 +1,14 @@
 name: /Users/nurithofesh/PycharmProjects/OSIC/conda_env
 channels:
   - defaults
-  - conda forge
 dependencies:
+  - pydot
+  - matplotlib
   - numpy
   - python
-  - pydot
-  - pandas
-  - matplotlib
   - seaborn
+  - pandas
+  - google-cloud-sdk
+  - pydicom
+  - statsmodels
 prefix: /Users/nurithofesh/PycharmProjects/OSIC/conda_env
