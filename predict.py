@@ -129,12 +129,10 @@ def predict_test(save_path, test_table, test_path=IMAGES_GCS_PATH + '/test',
     submission = test_data[["Patient", "Weeks"]]
 
     # get cnn predictions for later use
-    cnn_preds = test_data[["FVC"]]
-    processor.inverse_transform(cnn_preds, "FVC")
-    cnn_preds = cnn_preds.values
+    cnn_preds = test_data[["FVC"]].values
 
     # arrange test data
-    test_data = test_data.drop(["Patient"], axis=1).astype('float32').values
+    test_data = test_data.drop(["Patient", "FVC"], axis=1).astype('float32').values
 
     # get model
     model = models.get_qreg_model(test_data.shape[1])
@@ -208,10 +206,19 @@ def create_submission_form(save_path=None, images_path=IMAGES_GCS_PATH + '/test'
 
 
 if __name__ == '__main__':
-    predict_test('submissions/sub_6.csv',
+    predict_test('submissions/sub_1.csv',
                  table_data.get_test_table(),
-                 cnn_model_path='models_weights/cnn_model/model_v4.ckpt',
-                 enlarged_model=True,
-                 image_size=[512,512],
+                 cnn_model_path='models_weights/cnn_model/model_v6.ckpt',
+                 qreg_model_path='models_weights/qreg_model/model_v4.ckpt',
+                 enlarged_model=False,
+                 image_size=[256, 256],
+                 only_cnn=False
+                 )
+    predict_test('submissions/sub_2.csv',
+                 table_data.get_test_table(),
+                 cnn_model_path='models_weights/cnn_model/model_v6.ckpt',
+                 qreg_model_path='models_weights/qreg_model/model_v4.ckpt',
+                 enlarged_model=False,
+                 image_size=[256, 256],
                  only_cnn=True
                  )

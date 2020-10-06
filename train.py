@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import metrics
 from LargestValuesHolder import LargestValuesHolder
-from sklearn.model_selection import KFold
 
 
 # images path
@@ -164,7 +163,7 @@ def train_cnn_model(save_path, load_path=None, enlarge_model=False, hard_example
     return {'loss': train_losses, 'val_loss': validation_losses}
 
 
-def get_lr_callback(batch_size=64, plot=False, epochs=50, lr_start=0.0001, lr_min=0.00001):
+def get_lr_callback(batch_size=64, plot=False, epochs=50, lr_start=0.0002, lr_min=0.00001):
     """Returns a lr_scheduler callback which is used for training.
     Credit to 'from coffee import *' from kaggle at https://www.kaggle.com/chrisden'
     """
@@ -243,10 +242,8 @@ def train_qreg_model(save_path,
                                   epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE, shuffle=True,
                                   callbacks=[lr_schedule])
     else:
-        kfold_splitter = KFold(n_splits=5)  # validation splitter
-
         history = theta_model.fit(x=train_x, y=train_y, epochs=THETA_EPOCHS, batch_size=THETA_BATCH_SIZE,
-                                  validation_data=(val_x, val_y), shuffle=True)
+                                  validation_data=(val_x, val_y), shuffle=True, callbacks=[lr_schedule])
 
     # save model
     theta_model.save_weights(save_path)
@@ -255,7 +252,8 @@ def train_qreg_model(save_path,
 
 
 if __name__ == '__main__':
-    hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv')
+    hist = train_qreg_model('models_weights/qreg_model/model_v4.ckpt', pp_train_data='theta_data/pp_train.csv',
+                            without_validation=True)
 
 
 # v6 is good 256x256
