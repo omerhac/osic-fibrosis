@@ -257,3 +257,4 @@ if __name__ == '__main__':
 
 
 # v6 is good 256x256
+# v4 is good default qreg
