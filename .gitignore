@@ -2,3 +2,4 @@ conda_env/
 data/
 cloud/
 submissions/
+.DS_Store
