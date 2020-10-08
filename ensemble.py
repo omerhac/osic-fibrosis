@@ -5,6 +5,8 @@ import pickle
 import metrics
 import numpy as np
 from sklearn.linear_model import LinearRegression
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
 
 # images path
 IMAGES_GCS_PATH = 'gs://osic_fibrosis/images-norm/images-norm'
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     qreg_values = ensemble_table["Qreg_FVC"].values.reshape(-1, 1)
     cnn_values = ensemble_table["FVC"].values.reshape(-1, 1)
     y = ensemble_table["GT_FVC"].values
-    X = np.concatenate([qreg_values, cnn_values] ,axis=1)
+    X = np.concatenate([qreg_values, cnn_values], axis=1)
 
     # fit regressor
     linear_regressor = LinearRegression(fit_intercept=True, normalize=False)
@@ -88,3 +90,17 @@ if __name__ == '__main__':
     score2 = metrics.laplace_log_likelihood(y, pred2, 200)
     score3 = metrics.laplace_log_likelihood(y, pred3, 200)
     print("40qreg + 60cnn {}, 25qreg + 75cnn {}, 60qreg + 40cnn {}".format(score1, score2, score3))
+
+    # simple nn
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Input([2]),
+        tf.keras.layers.Dense(100, activation='relu'),
+        tf.keras.layers.Dense(100, activation='relu'),
+        tf.keras.layers.Dense(1, activation='linear')
+    ])
+
+    model.compile(optimizer='adam', loss='mse')
+    train_x, val_x, train_y, val_y = train_test_split(X, y, test_size=0.2)
+    model.fit(x=train_x, y=train_y, validation_data=(val_x, val_y), epochs=200, batch_size=10)
+
+    print("NN score {}".format(metrics.laplace_log_likelihood(y, model.predict(X)[0], 200)))
