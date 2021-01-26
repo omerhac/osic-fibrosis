@@ -18,7 +18,7 @@ Before fitting the funcion, outlier FVC measurements were removed by cook's dist
 Then k coefficiant is yielded and an exponenet function is built with the initial FVC measurement.
 
 ## Cloud Dataset
-The CT scans and ground truth k per scan was uploaded to a [GCS bucket](gs://osic_fibrosis) after converting into TF Record format.
+The CT scans and ground truth k per scan was uploaded to a GCS bucket - gs://osic_fibrosis after converting into TF Record format.
 
 ## Genrating prediction confidence
 In order to generate preidction confidence, A quantile regression model was fitted to the table data with the CNN model prediction as an ensamble.  
@@ -26,3 +26,6 @@ The quantile regression model essentially tries to predict 25 and 75 precentile 
 ## Images size
 The model was trained on 256x256 image size for expirementing efficiency.  
 It was then elarged by addeing 2 Conv layers performed on 512x512 pics berfore the prior trained model to downsample the image but still gain some signal from the high resolution pixels.  
+
+## Installation
+The conda yml environment files can be found both for cpu and gpu at the environments folder.
